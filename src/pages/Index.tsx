@@ -1,13 +1,22 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import TransitionWrapper from '@/components/TransitionWrapper';
+import Dashboard from '@/components/Dashboard';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <TransitionWrapper className="pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Панель управления</h1>
+          <p className="text-muted-foreground mt-2">
+            Общая информация об инструментах и оборудовании
+          </p>
+        </div>
+        
+        <Dashboard />
       </div>
-    </div>
+    </TransitionWrapper>
   );
 };
 
