@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { tools, Tool } from '@/lib/data';
 import ToolCard from '@/components/ToolCard';
@@ -182,12 +181,12 @@ const ToolsPage = () => {
                   <div className="space-y-1">
                     <p className="text-muted-foreground">Статус</p>
                     <div className="flex items-center gap-1.5">
-                      {statusButtons.find(b => b.value === selectedTool.status)?.icon && (
-                        <selectedTool.status === 'available' 
-                          ? <Check className="h-4 w-4 text-green-500" />
-                          : selectedTool.status === 'in-use'
-                            ? <Clock className="h-4 w-4 text-amber-500" />
-                            : <AlertTriangle className="h-4 w-4 text-red-500" />
+                      {selectedTool.status === 'available' ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : selectedTool.status === 'in-use' ? (
+                        <Clock className="h-4 w-4 text-amber-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-red-500" />
                       )}
                       <span>
                         {statusButtons.find(b => b.value === selectedTool.status)?.label}
