@@ -9,6 +9,8 @@ import { AnimatePresence } from "framer-motion";
 import Index from "./pages/Index";
 import ToolsPage from "./pages/ToolsPage";
 import EmployeesPage from "./pages/EmployeesPage";
+import CrewsPage from "./pages/CrewsPage";
+import SitesPage from "./pages/SitesPage";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 
@@ -31,6 +33,8 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/tools" element={<ToolsPage />} />
                     <Route path="/employees" element={<EmployeesPage />} />
+                    <Route path="/crews" element={<CrewsPage />} />
+                    <Route path="/sites" element={<SitesPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AnimatePresence>

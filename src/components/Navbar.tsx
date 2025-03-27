@@ -1,95 +1,121 @@
 
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { 
-  Building, 
+  Menu, 
+  Home, 
   Package, 
   Users, 
-  Menu, 
-  X 
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+  Building,
+  UserHardHat
+} from "lucide-react";
+import useMobile from "@/hooks/use-mobile";
 
-const Navbar: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface NavItem {
+  href: string;
+  label: string;
+  icon: any;
+}
+
+const navItems: NavItem[] = [
+  {
+    href: "/",
+    label: "Главная",
+    icon: Home,
+  },
+  {
+    href: "/tools",
+    label: "Инструменты",
+    icon: Package,
+  },
+  {
+    href: "/employees",
+    label: "Сотрудники",
+    icon: Users,
+  },
+  {
+    href: "/crews",
+    label: "Бригады",
+    icon: UserHardHat,
+  },
+  {
+    href: "/sites",
+    label: "Объекты",
+    icon: Building,
+  },
+];
+
+const Navbar = () => {
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const location = useLocation();
-  
-  const navItems = [
-    { path: '/', label: 'Панель управления', icon: Building },
-    { path: '/tools', label: 'Инструменты', icon: Package },
-    { path: '/employees', label: 'Сотрудники', icon: Users },
-  ];
-
-  const toggleMenu = () => setIsOpen(!isOpen);
-  const closeMenu = () => setIsOpen(false);
+  const isMobile = useMobile();
 
   return (
-    <nav className="sticky top-0 z-50 w-full glass shadow-sm">
-      <div className="mx-auto px-6 py-4 max-w-7xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <Building className="h-8 w-8 text-primary" />
-              <span className="text-xl font-semibold tracking-tight">МонтажСервис</span>
-            </Link>
-          </div>
+    <nav className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 max-w-full items-center">
+        <div className="mr-4 flex">
+          <Link to="/" className="flex items-center mr-6 space-x-2">
+            <span className="hidden font-bold sm:inline-block">
+              ToolManagerPro
+            </span>
+          </Link>
 
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center space-x-2 py-2 px-3 rounded-md transition-all",
-                  location.pathname === item.path
-                    ? "text-primary bg-primary/10"
-                    : "text-foreground/80 hover:text-primary hover:bg-primary/5"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </div>
+          <Button
+            variant="ghost"
+            className="mr-2 px-0 text-base hover:bg-transparent focus:bg-transparent md:hidden"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle Menu</span>
+          </Button>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              type="button"
-              className="p-2 rounded-md text-foreground/80 hover:text-primary hover:bg-primary/5"
-              onClick={toggleMenu}
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
+          {!isMobile && (
+            <div className="hidden gap-1 md:flex">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors hover:text-foreground",
+                    location.pathname === item.href
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Mobile menu */}
-      <div className={cn(
-        "md:hidden absolute w-full glass shadow-md transition-all duration-300 ease-in-out",
-        isOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0 invisible"
-      )}>
-        <div className="px-4 py-2 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center space-x-2 px-4 py-3 rounded-md transition-all",
-                location.pathname === item.path
-                  ? "text-primary bg-primary/10"
-                  : "text-foreground/80 hover:text-primary hover:bg-primary/5"
-              )}
-              onClick={closeMenu}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
+      {showMobileMenu && (
+        <div className="container border-t md:hidden">
+          <div className="grid grid-flow-row text-sm py-3 gap-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex w-full items-center rounded-md px-3 py-2",
+                  location.pathname === item.href
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setShowMobileMenu(false)}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };

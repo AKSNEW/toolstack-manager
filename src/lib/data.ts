@@ -1,4 +1,3 @@
-
 // Sample data for the application
 
 export interface Tool {
@@ -29,6 +28,26 @@ export interface Employee {
     checkoutDate: string;
     returnDate?: string;
   }[];
+}
+
+export interface Crew {
+  id: string;
+  name: string;
+  foreman: string; // employee id of the foreman
+  supervisor: string; // employee id of the supervisor
+  members: string[]; // array of employee ids
+  site?: string; // optional construction site id
+}
+
+export interface Site {
+  id: string;
+  name: string;
+  address: string;
+  status: 'planning' | 'active' | 'completed';
+  crewId?: string; // optional crew id assigned to this site
+  startDate?: string;
+  endDate?: string;
+  description: string;
 }
 
 export const tools: Tool[] = [
@@ -175,6 +194,37 @@ export const employees: Employee[] = [
   }
 ];
 
+// Initial crews data
+export const crews: Crew[] = [
+  {
+    id: 'c1',
+    name: 'Основная бригада А',
+    foreman: 'e3', // Mikhail Sokolov
+    supervisor: 'e2', // Natalia Volkova
+    members: ['e1', 'e3', 'e4'],
+  },
+];
+
+// Initial sites data
+export const sites: Site[] = [
+  {
+    id: 's1',
+    name: 'ЖК Солнечный берег',
+    address: 'ул. Приморская, 45',
+    status: 'active',
+    crewId: 'c1',
+    startDate: '2023-09-01',
+    description: 'Жилой комплекс из 3 зданий с подземной парковкой',
+  },
+  {
+    id: 's2',
+    name: 'Офисный центр Меркурий',
+    address: 'пр. Ленина, 78',
+    status: 'planning',
+    description: 'Бизнес-центр класса А с панорамным остеклением',
+  },
+];
+
 // Dashboard statistics
 export const dashboardStats = {
   totalTools: tools.length,
@@ -183,4 +233,7 @@ export const dashboardStats = {
   maintenanceTools: tools.filter(tool => tool.status === 'maintenance').length,
   totalEmployees: employees.length,
   activeRentals: employees.reduce((acc, emp) => acc + emp.activeRentals.length, 0),
+  totalCrews: crews.length,
+  totalSites: sites.length,
+  activeSites: sites.filter(site => site.status === 'active').length,
 };
