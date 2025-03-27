@@ -9,9 +9,9 @@ import {
   Package, 
   Users, 
   Building,
-  UserHardHat
+  HardHat
 } from "lucide-react";
-import useMobile from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NavItem {
   href: string;
@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
   {
     href: "/crews",
     label: "Бригады",
-    icon: UserHardHat,
+    icon: HardHat,
   },
   {
     href: "/sites",
@@ -50,7 +50,7 @@ const navItems: NavItem[] = [
 const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const location = useLocation();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
