@@ -1,20 +1,27 @@
 
 import React, { useState } from 'react';
-import { employees, Employee, tools, Tool } from '@/lib/data';
+import { employees, Employee, tools, Tool, crews, Crew } from '@/lib/data';
 import EmployeeCard from '@/components/EmployeeCard';
 import TransitionWrapper from '@/components/TransitionWrapper';
-import { Search, Users, X, Package, Calendar, Plus, UserPlus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Search, Users, X, Package, Calendar, Plus, UserPlus, Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import AddEmployeeForm from '@/components/AddEmployeeForm';
+import EditEmployeeForm from '@/components/EditEmployeeForm';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const EmployeesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
+  const [isEditEmployeeDialogOpen, setIsEditEmployeeDialogOpen] = useState(false);
+  const [isDeleteEmployeeDialogOpen, setIsDeleteEmployeeDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const [employeesList, setEmployeesList] = useState<Employee[]>(employees);
+  const { toast } = useToast();
 
   // Get unique departments
   const departments = [...new Set(employeesList.map(emp => emp.department))];
@@ -63,6 +70,74 @@ const EmployeesPage = () => {
     
     setEmployeesList(prev => [...prev, employee]);
     closeAddEmployeeDialog();
+  };
+
+  const openEditEmployeeDialog = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsEditEmployeeDialogOpen(true);
+  };
+
+  const closeEditEmployeeDialog = () => {
+    setIsEditEmployeeDialogOpen(false);
+  };
+
+  const handleEditEmployee = (id: string, updatedEmployee: Omit<Employee, 'id' | 'activeRentals' | 'rentalHistory'>) => {
+    setEmployeesList(prevList => 
+      prevList.map(employee => 
+        employee.id === id 
+          ? { 
+              ...employee, 
+              ...updatedEmployee 
+            } 
+          : employee
+      )
+    );
+
+    closeEditEmployeeDialog();
+    closeDialog();
+  };
+
+  const openDeleteEmployeeDialog = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setIsDeleteEmployeeDialogOpen(true);
+  };
+
+  const handleDeleteEmployee = () => {
+    if (!employeeToDelete) return;
+
+    // Check if employee is part of any crew
+    const isInCrew = crews.some(crew => 
+      crew.foreman === employeeToDelete.id || 
+      crew.supervisor === employeeToDelete.id || 
+      crew.members.includes(employeeToDelete.id)
+    );
+
+    if (isInCrew) {
+      toast({
+        title: "Ошибка удаления",
+        description: "Этот сотрудник входит в состав бригады. Сначала удалите его из всех бригад.",
+        variant: "destructive"
+      });
+    } else if (employeeToDelete.activeRentals.length > 0) {
+      toast({
+        title: "Ошибка удаления",
+        description: "У этого сотрудника есть активные заказы инструментов. Сначала верните все инструменты.",
+        variant: "destructive"
+      });
+    } else {
+      setEmployeesList(prevList => 
+        prevList.filter(employee => employee.id !== employeeToDelete.id)
+      );
+      
+      toast({
+        title: "Сотрудник удален",
+        description: `${employeeToDelete.name} был успешно удален из системы`
+      });
+    }
+    
+    setIsDeleteEmployeeDialogOpen(false);
+    setEmployeeToDelete(null);
+    setSelectedEmployee(null);
   };
 
   // Get tool details by ID
@@ -164,7 +239,7 @@ const EmployeesPage = () => {
         )}
         
         {/* Employee details dialog */}
-        <Dialog open={!!selectedEmployee} onOpenChange={() => closeDialog()}>
+        <Dialog open={!!selectedEmployee && !isEditEmployeeDialogOpen} onOpenChange={() => closeDialog()}>
           {selectedEmployee && (
             <DialogContent className="sm:max-w-[650px]">
               <DialogHeader className="text-center">
@@ -281,14 +356,31 @@ const EmployeesPage = () => {
                   </div>
                 )}
                 
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
+                <DialogFooter className="flex justify-between pt-4">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => openEditEmployeeDialog(selectedEmployee)}
+                      className="flex items-center gap-2" 
+                      variant="outline"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Редактировать
+                    </Button>
+                    <Button
+                      onClick={() => openDeleteEmployeeDialog(selectedEmployee)}
+                      className="flex items-center gap-2" 
+                      variant="destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Удалить
+                    </Button>
+                  </div>
+                  <Button
                     onClick={closeDialog}
-                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     Закрыть
-                  </button>
-                </div>
+                  </Button>
+                </DialogFooter>
               </div>
             </DialogContent>
           )}
@@ -309,6 +401,46 @@ const EmployeesPage = () => {
             />
           </DialogContent>
         </Dialog>
+
+        {/* Edit Employee Dialog */}
+        <Dialog open={isEditEmployeeDialogOpen} onOpenChange={setIsEditEmployeeDialogOpen}>
+          {selectedEmployee && (
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Редактировать профиль сотрудника</DialogTitle>
+                <DialogDescription>Измените информацию о сотруднике</DialogDescription>
+              </DialogHeader>
+              
+              <EditEmployeeForm 
+                employee={selectedEmployee}
+                onEditEmployee={handleEditEmployee}
+                onCancel={closeEditEmployeeDialog}
+                departments={departments}
+              />
+            </DialogContent>
+          )}
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteEmployeeDialogOpen} onOpenChange={setIsDeleteEmployeeDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Вы собираетесь удалить сотрудника "{employeeToDelete?.name}". Это действие нельзя отменить.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction 
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDeleteEmployee}
+              >
+                Удалить
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TransitionWrapper>
   );
