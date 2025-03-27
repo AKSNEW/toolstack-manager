@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { tools, Tool } from '@/lib/data';
 import ToolCard from '@/components/ToolCard';
@@ -11,8 +10,7 @@ import {
   AlertTriangle, 
   Clock, 
   Check,
-  Plus,
-  Tool as ToolIcon
+  Plus
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
