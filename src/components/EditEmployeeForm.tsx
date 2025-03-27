@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Employee } from '@/lib/data';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -79,107 +80,111 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>ФИО</FormLabel>
-              <FormControl>
-                <Input placeholder="Иванов Иван Иванович" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="position"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Должность</FormLabel>
-              <FormControl>
-                <Input placeholder="Старший инженер" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="department"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Отдел</FormLabel>
-              <FormControl>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  {...field}
-                >
-                  <option value="" disabled>Выберите отдел</option>
-                  {departments.map(department => (
-                    <option key={department} value={department}>{department}</option>
-                  ))}
-                  <option value="New Department">Другой отдел</option>
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="ivan@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Телефон</FormLabel>
-              <FormControl>
-                <Input placeholder="+7 (123) 456-7890" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="avatar"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL фотографии</FormLabel>
-              <FormControl>
-                <Input placeholder="https://..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>Отменить</Button>
-          <Button type="submit">Сохранить изменения</Button>
-        </div>
-      </form>
-    </Form>
+    <ScrollArea className="max-h-[80vh]">
+      <div className="p-1 sm:p-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ФИО</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Иванов Иван Иванович" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="position"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Должность</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Старший инженер" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="department"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Отдел</FormLabel>
+                  <FormControl>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      {...field}
+                    >
+                      <option value="" disabled>Выберите отдел</option>
+                      {departments.map(department => (
+                        <option key={department} value={department}>{department}</option>
+                      ))}
+                      <option value="New Department">Другой отдел</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="ivan@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Телефон</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+7 (123) 456-7890" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="avatar"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL фотографии</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex flex-wrap justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">Отменить</Button>
+              <Button type="submit" className="w-full sm:w-auto">Сохранить изменения</Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </ScrollArea>
   );
 };
 
