@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { tools, Tool } from '@/lib/data';
 import ToolCard from '@/components/ToolCard';
@@ -9,21 +10,27 @@ import {
   X, 
   AlertTriangle, 
   Clock, 
-  Check
+  Check,
+  Plus,
+  Tool as ToolIcon
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import AddToolForm from '@/components/AddToolForm';
 
 const ToolsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [isAddToolDialogOpen, setIsAddToolDialogOpen] = useState(false);
+  const [toolsList, setToolsList] = useState<Tool[]>(tools);
 
   // Get unique categories
-  const categories = [...new Set(tools.map(tool => tool.category))];
+  const categories = [...new Set(toolsList.map(tool => tool.category))];
   
   // Filter tools based on search and filters
-  const filteredTools = tools.filter(tool => {
+  const filteredTools = toolsList.filter(tool => {
     // Search term filter
     const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          tool.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -51,6 +58,25 @@ const ToolsPage = () => {
     setSearchTerm('');
   };
 
+  const openAddToolDialog = () => {
+    setIsAddToolDialogOpen(true);
+  };
+
+  const closeAddToolDialog = () => {
+    setIsAddToolDialogOpen(false);
+  };
+
+  const handleAddTool = (newTool: Omit<Tool, 'id' | 'status' | 'lastCheckedOut'>) => {
+    const tool: Tool = {
+      ...newTool,
+      id: `t${toolsList.length + 1}`,
+      status: 'available',
+    };
+    
+    setToolsList(prev => [...prev, tool]);
+    closeAddToolDialog();
+  };
+
   // Status buttons data
   const statusButtons = [
     { value: 'available', label: 'Доступно', icon: Check, color: 'bg-green-100 text-green-700 border-green-200' },
@@ -61,11 +87,20 @@ const ToolsPage = () => {
   return (
     <TransitionWrapper className="pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Инструменты и оборудование</h1>
-          <p className="text-muted-foreground mt-2">
-            Управление инструментами и оборудованием компании
-          </p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Инструменты и оборудование</h1>
+            <p className="text-muted-foreground mt-2">
+              Управление инструментами и оборудованием компании
+            </p>
+          </div>
+          <Button 
+            onClick={openAddToolDialog} 
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Добавить инструмент</span>
+          </Button>
         </div>
         
         {/* Search and filters */}
@@ -223,6 +258,22 @@ const ToolsPage = () => {
               </div>
             </DialogContent>
           )}
+        </Dialog>
+
+        {/* Add Tool Dialog */}
+        <Dialog open={isAddToolDialogOpen} onOpenChange={setIsAddToolDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Добавить новый инструмент</DialogTitle>
+              <DialogDescription>Заполните форму для добавления нового инструмента</DialogDescription>
+            </DialogHeader>
+            
+            <AddToolForm 
+              onAddTool={handleAddTool}
+              onCancel={closeAddToolDialog}
+              categories={categories}
+            />
+          </DialogContent>
         </Dialog>
       </div>
     </TransitionWrapper>

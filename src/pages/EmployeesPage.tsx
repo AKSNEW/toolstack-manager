@@ -3,20 +3,24 @@ import React, { useState } from 'react';
 import { employees, Employee, tools, Tool } from '@/lib/data';
 import EmployeeCard from '@/components/EmployeeCard';
 import TransitionWrapper from '@/components/TransitionWrapper';
-import { Search, Filter, Users, X, Package, Calendar } from 'lucide-react';
+import { Search, Users, X, Package, Calendar, Plus, UserPlus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
+import AddEmployeeForm from '@/components/AddEmployeeForm';
 
 const EmployeesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
+  const [employeesList, setEmployeesList] = useState<Employee[]>(employees);
 
   // Get unique departments
-  const departments = [...new Set(employees.map(emp => emp.department))];
+  const departments = [...new Set(employeesList.map(emp => emp.department))];
   
   // Filter employees based on search and filters
-  const filteredEmployees = employees.filter(employee => {
+  const filteredEmployees = employeesList.filter(employee => {
     // Search term filter
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,6 +45,26 @@ const EmployeesPage = () => {
     setSearchTerm('');
   };
 
+  const openAddEmployeeDialog = () => {
+    setIsAddEmployeeDialogOpen(true);
+  };
+
+  const closeAddEmployeeDialog = () => {
+    setIsAddEmployeeDialogOpen(false);
+  };
+
+  const handleAddEmployee = (newEmployee: Omit<Employee, 'id' | 'activeRentals' | 'rentalHistory'>) => {
+    const employee: Employee = {
+      ...newEmployee,
+      id: `e${employeesList.length + 1}`,
+      activeRentals: [],
+      rentalHistory: [],
+    };
+    
+    setEmployeesList(prev => [...prev, employee]);
+    closeAddEmployeeDialog();
+  };
+
   // Get tool details by ID
   const getToolById = (id: string): Tool | undefined => {
     return tools.find(tool => tool.id === id);
@@ -49,11 +73,20 @@ const EmployeesPage = () => {
   return (
     <TransitionWrapper className="pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Сотрудники</h1>
-          <p className="text-muted-foreground mt-2">
-            Управление профилями сотрудников компании
-          </p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Сотрудники</h1>
+            <p className="text-muted-foreground mt-2">
+              Управление профилями сотрудников компании
+            </p>
+          </div>
+          <Button 
+            onClick={openAddEmployeeDialog} 
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Добавить сотрудника</span>
+          </Button>
         </div>
         
         {/* Search and filters */}
@@ -259,6 +292,22 @@ const EmployeesPage = () => {
               </div>
             </DialogContent>
           )}
+        </Dialog>
+
+        {/* Add Employee Dialog */}
+        <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Добавить нового сотрудника</DialogTitle>
+              <DialogDescription>Заполните форму для добавления нового сотрудника</DialogDescription>
+            </DialogHeader>
+            
+            <AddEmployeeForm 
+              onAddEmployee={handleAddEmployee}
+              onCancel={closeAddEmployeeDialog}
+              departments={departments}
+            />
+          </DialogContent>
         </Dialog>
       </div>
     </TransitionWrapper>
