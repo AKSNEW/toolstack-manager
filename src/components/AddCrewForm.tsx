@@ -52,7 +52,7 @@ const AddCrewForm = ({ onSuccess }: AddCrewFormProps) => {
         foreman: data.foreman,
         supervisor: data.supervisor,
         members: [...data.members, data.foreman], // Include foreman in members
-        subCrews: [], // Add the missing subCrews property as an empty array
+        subCrews: [], // Add the subCrews property as an empty array
       };
       
       // Add to the crews array (in a real app, this would be an API call)

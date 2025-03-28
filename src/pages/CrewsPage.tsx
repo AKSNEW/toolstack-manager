@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { crews, Crew, employees, Employee, sites, Site, subCrews, SubCrew } from '@/lib/data';
 import CrewCard from '@/components/CrewCard';
@@ -37,20 +36,8 @@ const CrewsPage = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleAddCrew = (newCrew: Omit<Crew, 'id'>) => {
-    const crew: Crew = {
-      ...newCrew,
-      id: `c${crewsList.length + 1}`,
-      subCrews: [],
-    };
-    
-    setCrewsList(prev => [...prev, crew]);
+  const handleCloseAddDialog = () => {
     setIsAddDialogOpen(false);
-    
-    toast({
-      title: "Бригада создана",
-      description: `Бригада "${newCrew.name}" успешно создана`
-    });
   };
 
   const openEditDialog = (crew: Crew) => {
@@ -87,7 +74,6 @@ const CrewsPage = () => {
   const handleDeleteCrew = () => {
     if (!selectedCrew) return;
 
-    // Check if crew is assigned to any site
     const assignedToSite = sites.some(site => site.crewId === selectedCrew.id);
 
     if (assignedToSite) {
@@ -100,7 +86,6 @@ const CrewsPage = () => {
       return;
     }
 
-    // Remove any sub-crews associated with this crew
     setSubCrewsList(prevSubCrews => 
       prevSubCrews.filter(subCrew => !selectedCrew.subCrews.includes(subCrew.id))
     );
@@ -143,7 +128,6 @@ const CrewsPage = () => {
   const getAvailableEmployees = (): Employee[] => {
     if (!selectedCrew) return [];
     
-    // Get all employees that are not in the current crew
     return employees.filter(employee => !selectedCrew.members.includes(employee.id));
   };
 
@@ -176,7 +160,6 @@ const CrewsPage = () => {
   const removeEmployeeFromCrew = (employeeId: string) => {
     if (!selectedCrew) return;
 
-    // Check if employee is foreman or supervisor
     if (selectedCrew.foreman === employeeId) {
       toast({
         title: "Ошибка удаления",
@@ -291,7 +274,6 @@ const CrewsPage = () => {
     );
   };
 
-  // Get associated site for a crew
   const getCrewSite = (crewId: string): Site | undefined => {
     return sites.find(site => site.crewId === crewId);
   };
@@ -319,7 +301,6 @@ const CrewsPage = () => {
           </Button>
         </div>
         
-        {/* Search */}
         <div className="glass rounded-xl mb-8 p-4">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -341,7 +322,6 @@ const CrewsPage = () => {
           </div>
         </div>
         
-        {/* Crews grid */}
         {filteredCrews.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCrews.map(crew => (
@@ -368,7 +348,19 @@ const CrewsPage = () => {
           </div>
         )}
         
-        {/* Crew details dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Создать новую бригаду</DialogTitle>
+              <DialogDescription>
+                Заполните информацию для создания строительной бригады
+              </DialogDescription>
+            </DialogHeader>
+            
+            <AddCrewForm onSuccess={handleCloseAddDialog} />
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={!!selectedCrew && !isEditDialogOpen && !showManageMembers && !showSubCrews} onOpenChange={() => closeDialog()}>
           {selectedCrew && (
             <DialogContent className="sm:max-w-[650px]">
@@ -380,7 +372,6 @@ const CrewsPage = () => {
               </DialogHeader>
               
               <div className="mt-4 space-y-6">
-                {/* Key positions */}
                 <div className="grid grid-cols-2 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
@@ -433,7 +424,6 @@ const CrewsPage = () => {
                   </Card>
                 </div>
                 
-                {/* Assigned site */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Назначенный объект</CardTitle>
@@ -453,7 +443,6 @@ const CrewsPage = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Sub-crews */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="text-lg font-medium">
@@ -506,7 +495,6 @@ const CrewsPage = () => {
                   )}
                 </div>
                 
-                {/* Crew members */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="text-lg font-medium">
@@ -592,7 +580,6 @@ const CrewsPage = () => {
           )}
         </Dialog>
 
-        {/* Sub-Crews Management Dialog */}
         <Dialog open={showSubCrews} onOpenChange={setShowSubCrews}>
           {selectedCrew && (
             <DialogContent className="sm:max-w-[700px]">
@@ -622,7 +609,6 @@ const CrewsPage = () => {
           )}
         </Dialog>
 
-        {/* Manage Crew Members Dialog */}
         <Dialog open={showManageMembers} onOpenChange={setShowManageMembers}>
           {selectedCrew && (
             <DialogContent className="sm:max-w-[700px]">
@@ -763,7 +749,6 @@ const CrewsPage = () => {
           )}
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
