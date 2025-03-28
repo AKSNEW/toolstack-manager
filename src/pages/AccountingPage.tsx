@@ -70,14 +70,28 @@ const AccountingPage = () => {
   return (
     <TransitionWrapper className="pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">Бухгалтерия</h1>
             <p className="text-muted-foreground mt-2">
               Управление расходами, чеками и финансовой отчетностью
             </p>
           </div>
-          <div className="flex space-x-2">
+          
+          {/* Floating action button for mobile */}
+          <div className="fixed bottom-6 right-6 z-10 sm:hidden">
+            <Button 
+              onClick={() => setIsReceiptDialogOpen(true)}
+              size="lg"
+              className="rounded-full shadow-lg h-14 w-14 p-0"
+            >
+              <Plus className="h-6 w-6" />
+              <span className="sr-only">Добавить чек</span>
+            </Button>
+          </div>
+          
+          {/* Desktop buttons */}
+          <div className="hidden sm:flex space-x-2">
             <Button 
               variant="outline"
               onClick={() => setIsChatDialogOpen(true)}
@@ -94,6 +108,30 @@ const AccountingPage = () => {
               <span>Добавить чек</span>
             </Button>
           </div>
+          
+          {/* Mobile chat button */}
+          <div className="sm:hidden flex justify-center">
+            <Button 
+              variant="outline"
+              onClick={() => setIsChatDialogOpen(true)}
+              className="w-full flex items-center justify-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Чат с бухгалтером</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Add a prominent button for adding receipts on mobile before tabs */}
+        <div className="mb-6 sm:hidden">
+          <Button 
+            onClick={() => setIsReceiptDialogOpen(true)}
+            className="w-full flex items-center justify-center gap-2 py-6 text-base"
+            variant="default"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Добавить чек</span>
+          </Button>
         </div>
 
         <Tabs defaultValue="receipts" className="space-y-6">
