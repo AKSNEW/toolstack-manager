@@ -30,6 +30,14 @@ export interface Employee {
   }[];
 }
 
+export interface SubCrew {
+  id: string;
+  name: string;
+  foreman: string; // employee id of the sub-crew foreman
+  members: string[]; // array of employee ids
+  specialization: string; // e.g., "Electrical", "Plumbing", etc.
+}
+
 export interface Crew {
   id: string;
   name: string;
@@ -37,6 +45,7 @@ export interface Crew {
   supervisor: string; // employee id of the supervisor
   members: string[]; // array of employee ids
   site?: string; // optional construction site id
+  subCrews: string[]; // array of sub-crew ids
 }
 
 export interface Site {
@@ -48,6 +57,33 @@ export interface Site {
   startDate?: string;
   endDate?: string;
   description: string;
+}
+
+export interface ExpenseReceipt {
+  id: string;
+  employeeId: string;
+  date: string;
+  amount: number;
+  description: string;
+  category: 'materials' | 'tools' | 'travel' | 'food' | 'other';
+  status: 'pending' | 'approved' | 'rejected';
+  imageUrl?: string;
+}
+
+export interface TravelExpense {
+  id: string;
+  employeeId: string;
+  startDate: string;
+  endDate: string;
+  destination: string;
+  purpose: string;
+  expenses: {
+    type: 'transportation' | 'accommodation' | 'food' | 'other';
+    amount: number;
+    description: string;
+  }[];
+  status: 'pending' | 'approved' | 'rejected';
+  totalAmount: number;
 }
 
 export const tools: Tool[] = [
@@ -194,6 +230,17 @@ export const employees: Employee[] = [
   }
 ];
 
+// Initial sub-crews data
+export const subCrews: SubCrew[] = [
+  {
+    id: 'sc1',
+    name: 'Электрики',
+    foreman: 'e1', // Alexei Petrov
+    members: ['e1'],
+    specialization: 'Electrical',
+  },
+];
+
 // Initial crews data
 export const crews: Crew[] = [
   {
@@ -202,6 +249,7 @@ export const crews: Crew[] = [
     foreman: 'e3', // Mikhail Sokolov
     supervisor: 'e2', // Natalia Volkova
     members: ['e1', 'e3', 'e4'],
+    subCrews: ['sc1'],
   },
 ];
 
@@ -222,6 +270,49 @@ export const sites: Site[] = [
     address: 'пр. Ленина, 78',
     status: 'planning',
     description: 'Бизнес-центр класса А с панорамным остеклением',
+  },
+];
+
+// Initial expense receipts
+export const expenseReceipts: ExpenseReceipt[] = [
+  {
+    id: 'r1',
+    employeeId: 'e1',
+    date: '2023-10-15',
+    amount: 5000,
+    description: 'Покупка материалов для электромонтажа',
+    category: 'materials',
+    status: 'approved',
+    imageUrl: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f',
+  },
+  {
+    id: 'r2',
+    employeeId: 'e3',
+    date: '2023-10-20',
+    amount: 3500,
+    description: 'Инструменты для столярных работ',
+    category: 'tools',
+    status: 'pending',
+    imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e',
+  },
+];
+
+// Initial travel expenses
+export const travelExpenses: TravelExpense[] = [
+  {
+    id: 't1',
+    employeeId: 'e2',
+    startDate: '2023-09-10',
+    endDate: '2023-09-15',
+    destination: 'Москва',
+    purpose: 'Встреча с поставщиками материалов',
+    expenses: [
+      { type: 'transportation', amount: 15000, description: 'Авиабилеты' },
+      { type: 'accommodation', amount: 25000, description: 'Гостиница (5 ночей)' },
+      { type: 'food', amount: 10000, description: 'Питание' },
+    ],
+    status: 'approved',
+    totalAmount: 50000,
   },
 ];
 

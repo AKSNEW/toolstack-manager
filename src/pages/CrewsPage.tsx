@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { crews, Crew, employees, Employee, sites, Site } from '@/lib/data';
+import { crews, Crew, employees, Employee, sites, Site, subCrews, SubCrew } from '@/lib/data';
 import CrewCard from '@/components/CrewCard';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,15 +11,18 @@ import { useToast } from '@/hooks/use-toast';
 import AddCrewForm from '@/components/AddCrewForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import SubCrewManagement from '@/components/SubCrewManagement';
 
 const CrewsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [crewsList, setCrewsList] = useState<Crew[]>(crews);
+  const [subCrewsList, setSubCrewsList] = useState<SubCrew[]>(subCrews);
   const [selectedCrew, setSelectedCrew] = useState<Crew | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showManageMembers, setShowManageMembers] = useState(false);
+  const [showSubCrews, setShowSubCrews] = useState(false);
   const { toast } = useToast();
 
   const handleCrewClick = (crew: Crew) => {
@@ -38,6 +41,7 @@ const CrewsPage = () => {
     const crew: Crew = {
       ...newCrew,
       id: `c${crewsList.length + 1}`,
+      subCrews: [],
     };
     
     setCrewsList(prev => [...prev, crew]);
@@ -96,6 +100,11 @@ const CrewsPage = () => {
       return;
     }
 
+    // Remove any sub-crews associated with this crew
+    setSubCrewsList(prevSubCrews => 
+      prevSubCrews.filter(subCrew => !selectedCrew.subCrews.includes(subCrew.id))
+    );
+
     setCrewsList(prevList => 
       prevList.filter(crew => crew.id !== selectedCrew.id)
     );
@@ -116,6 +125,15 @@ const CrewsPage = () => {
 
   const closeManageMembers = () => {
     setShowManageMembers(false);
+  };
+
+  const openManageSubCrews = (crew: Crew) => {
+    setSelectedCrew(crew);
+    setShowSubCrews(true);
+  };
+
+  const closeManageSubCrews = () => {
+    setShowSubCrews(false);
   };
 
   const getEmployeeById = (id: string): Employee | undefined => {
@@ -203,6 +221,76 @@ const CrewsPage = () => {
     });
   };
 
+  const getSubCrewsForCrew = (crewId: string): SubCrew[] => {
+    if (!selectedCrew) return [];
+    return subCrewsList.filter(subCrew => selectedCrew.subCrews.includes(subCrew.id));
+  };
+
+  const handleAddSubCrew = (newSubCrew: Omit<SubCrew, 'id'>) => {
+    if (!selectedCrew) return;
+
+    const subCrew: SubCrew = {
+      ...newSubCrew,
+      id: `sc${subCrewsList.length + 1}`,
+    };
+    
+    setSubCrewsList(prev => [...prev, subCrew]);
+    
+    setCrewsList(prevList => 
+      prevList.map(crew => 
+        crew.id === selectedCrew.id 
+          ? { 
+              ...crew, 
+              subCrews: [...crew.subCrews, subCrew.id]
+            } 
+          : crew
+      )
+    );
+
+    setSelectedCrew(prev => 
+      prev ? { ...prev, subCrews: [...prev.subCrews, subCrew.id] } : null
+    );
+  };
+
+  const handleDeleteSubCrew = (subCrewId: string) => {
+    if (!selectedCrew) return;
+
+    setSubCrewsList(prev => prev.filter(sc => sc.id !== subCrewId));
+    
+    setCrewsList(prevList => 
+      prevList.map(crew => 
+        crew.id === selectedCrew.id 
+          ? { 
+              ...crew, 
+              subCrews: crew.subCrews.filter(id => id !== subCrewId)
+            } 
+          : crew
+      )
+    );
+
+    setSelectedCrew(prev => 
+      prev ? { 
+        ...prev, 
+        subCrews: prev.subCrews.filter(id => id !== subCrewId)
+      } : null
+    );
+    
+    toast({
+      title: "Подбригада удалена",
+      description: "Подбригада успешно удалена из состава бригады"
+    });
+  };
+
+  const handleUpdateSubCrew = (id: string, updatedSubCrew: Partial<SubCrew>) => {
+    setSubCrewsList(prev => 
+      prev.map(sc => 
+        sc.id === id 
+          ? { ...sc, ...updatedSubCrew } 
+          : sc
+      )
+    );
+  };
+
   // Get associated site for a crew
   const getCrewSite = (crewId: string): Site | undefined => {
     return sites.find(site => site.crewId === crewId);
@@ -281,7 +369,7 @@ const CrewsPage = () => {
         )}
         
         {/* Crew details dialog */}
-        <Dialog open={!!selectedCrew && !isEditDialogOpen && !showManageMembers} onOpenChange={() => closeDialog()}>
+        <Dialog open={!!selectedCrew && !isEditDialogOpen && !showManageMembers && !showSubCrews} onOpenChange={() => closeDialog()}>
           {selectedCrew && (
             <DialogContent className="sm:max-w-[650px]">
               <DialogHeader>
@@ -365,6 +453,59 @@ const CrewsPage = () => {
                   </CardContent>
                 </Card>
                 
+                {/* Sub-crews */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-medium">
+                      Подбригады ({selectedCrew.subCrews.length})
+                    </h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-1 text-xs"
+                      onClick={() => openManageSubCrews(selectedCrew)}
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Управление
+                    </Button>
+                  </div>
+                  
+                  {selectedCrew.subCrews.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {selectedCrew.subCrews.map(subCrewId => {
+                        const subCrew = subCrewsList.find(sc => sc.id === subCrewId);
+                        if (!subCrew) return null;
+                        
+                        return (
+                          <Card key={subCrew.id} className="overflow-hidden">
+                            <CardHeader className="bg-muted/50 pb-2">
+                              <CardTitle className="text-sm">{subCrew.name}</CardTitle>
+                              <CardDescription className="text-xs">
+                                Специализация: {subCrew.specialization}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-2">
+                              <div className="flex justify-between items-center">
+                                <div className="text-sm">
+                                  Бригадир: {getEmployeeById(subCrew.foreman)?.name}
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {subCrew.members.length} чел.
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center p-6 bg-muted/50 rounded-lg">
+                      <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">У этой бригады нет подбригад</p>
+                    </div>
+                  )}
+                </div>
+                
                 {/* Crew members */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
@@ -447,6 +588,36 @@ const CrewsPage = () => {
                   </Button>
                 </DialogFooter>
               </div>
+            </DialogContent>
+          )}
+        </Dialog>
+
+        {/* Sub-Crews Management Dialog */}
+        <Dialog open={showSubCrews} onOpenChange={setShowSubCrews}>
+          {selectedCrew && (
+            <DialogContent className="sm:max-w-[700px]">
+              <DialogHeader>
+                <DialogTitle>Управление подбригадами</DialogTitle>
+                <DialogDescription>
+                  Создание и управление специализированными подбригадами
+                </DialogDescription>
+              </DialogHeader>
+              
+              <SubCrewManagement
+                subCrews={getSubCrewsForCrew(selectedCrew.id)}
+                onAddSubCrew={handleAddSubCrew}
+                onDeleteSubCrew={handleDeleteSubCrew}
+                onUpdateSubCrew={handleUpdateSubCrew}
+                crewId={selectedCrew.id}
+                availableEmployees={employees}
+                getEmployeeById={getEmployeeById}
+              />
+              
+              <DialogFooter className="mt-4">
+                <Button onClick={closeManageSubCrews}>
+                  Готово
+                </Button>
+              </DialogFooter>
             </DialogContent>
           )}
         </Dialog>

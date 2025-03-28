@@ -11,6 +11,7 @@ import ToolsPage from "./pages/ToolsPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import CrewsPage from "./pages/CrewsPage";
 import SitesPage from "./pages/SitesPage";
+import AccountingPage from "./pages/AccountingPage";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 
@@ -35,6 +36,7 @@ const App = () => {
                     <Route path="/employees" element={<EmployeesPage />} />
                     <Route path="/crews" element={<CrewsPage />} />
                     <Route path="/sites" element={<SitesPage />} />
+                    <Route path="/accounting" element={<AccountingPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AnimatePresence>
