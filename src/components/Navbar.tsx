@@ -9,7 +9,8 @@ import {
   Package, 
   Users, 
   Building,
-  HardHat
+  HardHat,
+  Calculator
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -44,6 +45,11 @@ const navItems: NavItem[] = [
     href: "/sites",
     label: "Объекты",
     icon: Building,
+  },
+  {
+    href: "/accounting",
+    label: "Бухгалтерия",
+    icon: Calculator,
   },
 ];
 
