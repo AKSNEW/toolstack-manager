@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { expenseReceipts, travelExpenses, employees, ExpenseReceipt, TravelExpense } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Receipt, Bus, FileText, Filter, Plus, Search, Calendar, BadgeRussianRubble } from 'lucide-react';
+import { Receipt, Bus, FileText, Filter, Plus, Search, Calendar, BadgeRussianRuble } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
