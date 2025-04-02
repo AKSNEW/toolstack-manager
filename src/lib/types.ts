@@ -15,6 +15,14 @@ export interface Tool {
   description: string;
 }
 
+export interface DriverLicense {
+  number: string;
+  category: string;
+  issueDate: string;
+  expiryDate: string;
+  issuedBy?: string;
+}
+
 export interface Employee {
   id: string;
   name: string;
@@ -24,6 +32,7 @@ export interface Employee {
   phone: string;
   avatar: string;
   birthDate?: string;
+  driverLicense?: DriverLicense;
   activeRentals: string[];
   rentalHistory: {
     toolId: string;
@@ -72,6 +81,14 @@ export interface ExpenseReceipt {
   imageUrl?: string;
 }
 
+export interface PerDiem {
+  dailyRate: number;
+  days: number;
+  totalAmount: number;
+  city: string;
+  description?: string;
+}
+
 export interface TravelExpense {
   id: string;
   employeeId: string;
@@ -84,6 +101,7 @@ export interface TravelExpense {
     amount: number;
     description: string;
   }[];
+  perDiem?: PerDiem;
   status: 'pending' | 'approved' | 'rejected';
   totalAmount: number;
 }

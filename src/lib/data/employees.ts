@@ -12,6 +12,13 @@ export const employees: Employee[] = [
     phone: '+7 (123) 456-7890',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
     birthDate: '1988-07-15',
+    driverLicense: {
+      number: '7743 265891',
+      category: 'B, C',
+      issueDate: '2012-03-20',
+      expiryDate: '2032-03-20',
+      issuedBy: 'ГИБДД 7701'
+    },
     activeRentals: ['t6'],
     rentalHistory: [
       {
@@ -34,6 +41,13 @@ export const employees: Employee[] = [
     phone: '+7 (234) 567-8901',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
     birthDate: '1985-11-23',
+    driverLicense: {
+      number: '9851 345762',
+      category: 'B',
+      issueDate: '2010-06-15',
+      expiryDate: '2030-06-15',
+      issuedBy: 'ГИБДД 7702'
+    },
     activeRentals: [],
     rentalHistory: [
       {
@@ -74,6 +88,13 @@ export const employees: Employee[] = [
     phone: '+7 (456) 789-0123',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
     birthDate: '1992-05-10',
+    driverLicense: {
+      number: '5512 876543',
+      category: 'B',
+      issueDate: '2013-09-05',
+      expiryDate: '2033-09-05',
+      issuedBy: 'ГИБДД 7703'
+    },
     activeRentals: [],
     rentalHistory: [
       {

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Employee } from '@/lib/data';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { IdCard } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -29,6 +31,13 @@ const formSchema = z.object({
   avatar: z.string().url({
     message: 'Введите корректный URL изображения',
   }),
+  // Optional driver license fields
+  hasDriverLicense: z.boolean().optional(),
+  driverLicenseNumber: z.string().optional(),
+  driverLicenseCategory: z.string().optional(),
+  driverLicenseIssueDate: z.string().optional(),
+  driverLicenseExpiryDate: z.string().optional(),
+  driverLicenseIssuedBy: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -52,19 +61,42 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
       email: employee.email,
       phone: employee.phone,
       avatar: employee.avatar,
+      hasDriverLicense: !!employee.driverLicense,
+      driverLicenseNumber: employee.driverLicense?.number || '',
+      driverLicenseCategory: employee.driverLicense?.category || '',
+      driverLicenseIssueDate: employee.driverLicense?.issueDate || '',
+      driverLicenseExpiryDate: employee.driverLicense?.expiryDate || '',
+      driverLicenseIssuedBy: employee.driverLicense?.issuedBy || '',
     },
   });
 
+  const hasDriverLicense = form.watch('hasDriverLicense');
+
   const onSubmit = (values: FormValues) => {
     try {
-      onEditEmployee(employee.id, {
+      const updatedEmployee: Omit<Employee, 'id' | 'activeRentals' | 'rentalHistory'> = {
         name: values.name,
         position: values.position,
         department: values.department,
         email: values.email,
         phone: values.phone,
         avatar: values.avatar,
-      });
+        birthDate: employee.birthDate,
+      };
+
+      // Add driver license if provided
+      if (values.hasDriverLicense && values.driverLicenseNumber && values.driverLicenseCategory &&
+          values.driverLicenseIssueDate && values.driverLicenseExpiryDate) {
+        updatedEmployee.driverLicense = {
+          number: values.driverLicenseNumber,
+          category: values.driverLicenseCategory,
+          issueDate: values.driverLicenseIssueDate,
+          expiryDate: values.driverLicenseExpiryDate,
+          issuedBy: values.driverLicenseIssuedBy,
+        };
+      }
+
+      onEditEmployee(employee.id, updatedEmployee);
       
       toast({
         title: 'Профиль обновлен',
@@ -176,6 +208,115 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
                 </FormItem>
               )}
             />
+            
+            {/* Driver License Section */}
+            <Accordion type="single" collapsible className="border rounded-md">
+              <AccordionItem value="driver-license">
+                <AccordionTrigger className="px-4">
+                  <div className="flex items-center gap-2">
+                    <IdCard className="h-4 w-4" />
+                    <span>Водительское удостоверение</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="hasDriverLicense"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4"
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <FormLabel>Есть водительское удостоверение</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {hasDriverLicense && (
+                      <div className="space-y-4 mt-4">
+                        <FormField
+                          control={form.control}
+                          name="driverLicenseNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Номер ВУ</FormLabel>
+                              <FormControl>
+                                <Input placeholder="0000 000000" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="driverLicenseCategory"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Категории</FormLabel>
+                              <FormControl>
+                                <Input placeholder="A, B, C" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="driverLicenseIssueDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Дата выдачи</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="driverLicenseExpiryDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Дата окончания</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="driverLicenseIssuedBy"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Кем выдано</FormLabel>
+                              <FormControl>
+                                <Input placeholder="ГИБДД ..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
             
             <div className="flex flex-wrap justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">Отменить</Button>

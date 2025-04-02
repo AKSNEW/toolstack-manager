@@ -39,7 +39,36 @@ export const travelExpenses: TravelExpense[] = [
       { type: 'accommodation', amount: 25000, description: 'Гостиница (5 ночей)' },
       { type: 'food', amount: 10000, description: 'Питание' },
     ],
+    perDiem: {
+      dailyRate: 2000,
+      days: 5,
+      totalAmount: 10000,
+      city: 'Москва',
+      description: 'Стандартные суточные для командировки в Москву',
+    },
     status: 'approved',
-    totalAmount: 50000,
+    totalAmount: 60000,  // Updated to include per-diem
   },
+  {
+    id: 't2',
+    employeeId: 'e1',
+    startDate: '2023-11-05',
+    endDate: '2023-11-08',
+    destination: 'Санкт-Петербург',
+    purpose: 'Обучение по электромонтажным работам',
+    expenses: [
+      { type: 'transportation', amount: 8000, description: 'Билеты на поезд' },
+      { type: 'accommodation', amount: 12000, description: 'Гостиница (3 ночи)' },
+      { type: 'food', amount: 6000, description: 'Питание' },
+    ],
+    perDiem: {
+      dailyRate: 1800,
+      days: 3,
+      totalAmount: 5400,
+      city: 'Санкт-Петербург',
+      description: 'Суточные для командировки в СПб',
+    },
+    status: 'pending',
+    totalAmount: 31400, // Includes per-diem
+  }
 ];

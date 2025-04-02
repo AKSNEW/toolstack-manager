@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { expenseReceipts, travelExpenses, employees, ExpenseReceipt, TravelExpense } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Receipt, Bus, FileText, Filter, Plus, Search } from 'lucide-react';
+import { Receipt, Bus, FileText, Filter, Plus, Search, Calendar, BadgeRussianRubble } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
@@ -322,7 +322,45 @@ const AccountingPage = () => {
                     <CardContent>
                       <div className="text-sm mb-3">{expense.purpose}</div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-4">
+                        {/* Per Diem Section */}
+                        {expense.perDiem && (
+                          <div className="bg-muted/30 p-4 rounded-lg mb-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2 font-medium">
+                                <BadgeRussianRubble className="h-5 w-5 text-primary" />
+                                <span>Суточные</span>
+                              </div>
+                              <div className="text-right">
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  <span>{expense.perDiem.days} дн.</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Город</p>
+                                <p>{expense.perDiem.city}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Ставка</p>
+                                <p>{formatCurrency(expense.perDiem.dailyRate)} / день</p>
+                              </div>
+                            </div>
+                            
+                            {expense.perDiem.description && (
+                              <p className="text-sm text-muted-foreground mt-2">{expense.perDiem.description}</p>
+                            )}
+                            
+                            <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+                              <span className="font-medium">Всего суточных:</span>
+                              <span className="font-bold">{formatCurrency(expense.perDiem.totalAmount)}</span>
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="font-medium text-sm text-muted-foreground">Расходы:</div>
                         <Table>
                           <TableHeader>
