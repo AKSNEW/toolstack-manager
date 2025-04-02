@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Employee } from '@/lib/data';
+import { Employee } from '@/lib/types';
 import { Calendar, Gift, CalendarDays } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
