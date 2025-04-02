@@ -1,3 +1,4 @@
+
 // Sample data for the application
 
 export interface Tool {
@@ -22,6 +23,7 @@ export interface Employee {
   email: string;
   phone: string;
   avatar: string;
+  birthDate?: string; // Добавляем дату рождения
   activeRentals: string[];
   rentalHistory: {
     toolId: string;
@@ -160,6 +162,7 @@ export const employees: Employee[] = [
     email: 'alexei.p@example.com',
     phone: '+7 (123) 456-7890',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+    birthDate: '1988-07-15', // Добавляем дату рождения
     activeRentals: ['t6'],
     rentalHistory: [
       {
@@ -181,6 +184,7 @@ export const employees: Employee[] = [
     email: 'natalia.v@example.com',
     phone: '+7 (234) 567-8901',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
+    birthDate: '1985-11-23', // Добавляем дату рождения
     activeRentals: [],
     rentalHistory: [
       {
@@ -198,6 +202,7 @@ export const employees: Employee[] = [
     email: 'mikhail.s@example.com',
     phone: '+7 (345) 678-9012',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+    birthDate: '1990-01-30', // Добавляем дату рождения
     activeRentals: ['t2'],
     rentalHistory: [
       {
@@ -219,6 +224,7 @@ export const employees: Employee[] = [
     email: 'elena.i@example.com',
     phone: '+7 (456) 789-0123',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
+    birthDate: '1992-05-10', // Добавляем дату рождения
     activeRentals: [],
     rentalHistory: [
       {
@@ -327,4 +333,42 @@ export const dashboardStats = {
   totalCrews: crews.length,
   totalSites: sites.length,
   activeSites: sites.filter(site => site.status === 'active').length,
+};
+
+// Функция для получения ближайших дней рождения сотрудников
+export const getUpcomingBirthdays = () => {
+  const today = new Date();
+  
+  // Создаем массив сотрудников с датами предстоящих дней рождения в этом году
+  const employeesWithUpcomingBirthdays = employees
+    .filter(employee => employee.birthDate)
+    .map(employee => {
+      const birthDate = new Date(employee.birthDate!);
+      const thisYearBirthday = new Date(
+        today.getFullYear(),
+        birthDate.getMonth(),
+        birthDate.getDate()
+      );
+      
+      // Если день рождения уже прошел в этом году, рассчитываем дату на следующий год
+      if (thisYearBirthday < today) {
+        thisYearBirthday.setFullYear(today.getFullYear() + 1);
+      }
+      
+      const daysUntil = Math.ceil(
+        (thisYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      
+      return {
+        ...employee,
+        upcomingBirthday: thisYearBirthday,
+        daysUntil
+      };
+    })
+    // Сортируем по близости даты дня рождения
+    .sort((a, b) => a.daysUntil - b.daysUntil)
+    // Берем только ближайшие 3 дня рождения
+    .slice(0, 3);
+    
+  return employeesWithUpcomingBirthdays;
 };

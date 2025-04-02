@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { dashboardStats, tools, employees } from '@/lib/data';
+import { dashboardStats, tools, employees, getUpcomingBirthdays } from '@/lib/data';
 import { Package, Users, Clock, AlertTriangle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import BirthdayCard from './BirthdayCard';
 
 const Dashboard: React.FC = () => {
   // Get most recent tool activities
@@ -67,6 +68,9 @@ const Dashboard: React.FC = () => {
     }).format(date);
   };
 
+  // Получаем список ближайших дней рождения
+  const upcomingBirthdays = getUpcomingBirthdays();
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -88,37 +92,41 @@ const Dashboard: React.FC = () => {
         ))}
       </div>
 
-      <div className="glass rounded-xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-border">
-          <h2 className="text-lg font-semibold">Недавняя активность</h2>
-          <p className="text-sm text-muted-foreground">Последние выдачи оборудования</p>
-        </div>
-        <div className="divide-y divide-border">
-          {recentActivity.length > 0 ? (
-            recentActivity.map((tool) => (
-              <div key={tool.id} className="px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="mr-4 p-2 rounded-lg bg-primary/10">
-                    <Package className="h-5 w-5 text-primary" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="glass rounded-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-border">
+            <h2 className="text-lg font-semibold">Недавняя активность</h2>
+            <p className="text-sm text-muted-foreground">Последние выдачи оборудования</p>
+          </div>
+          <div className="divide-y divide-border">
+            {recentActivity.length > 0 ? (
+              recentActivity.map((tool) => (
+                <div key={tool.id} className="px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="mr-4 p-2 rounded-lg bg-primary/10">
+                      <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{tool.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Выдано: {tool.lastCheckedOut && getEmployeeName(tool.lastCheckedOut.employeeId)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium">{tool.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Выдано: {tool.lastCheckedOut && getEmployeeName(tool.lastCheckedOut.employeeId)}
-                    </p>
+                  <div className="text-sm text-muted-foreground">
+                    {tool.lastCheckedOut && formatDate(tool.lastCheckedOut.date)}
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {tool.lastCheckedOut && formatDate(tool.lastCheckedOut.date)}
-                </div>
+              ))
+            ) : (
+              <div className="px-6 py-8 text-center">
+                <p className="text-muted-foreground">Нет недавней активности</p>
               </div>
-            ))
-          ) : (
-            <div className="px-6 py-8 text-center">
-              <p className="text-muted-foreground">Нет недавней активности</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+
+        <BirthdayCard employees={upcomingBirthdays} />
       </div>
     </div>
   );
