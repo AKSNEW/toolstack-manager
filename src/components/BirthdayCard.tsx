@@ -22,6 +22,42 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
       .map(part => part.charAt(0))
       .join('');
   };
+  
+  const getZodiacSign = (date: Date) => {
+    const day = date.getDate();
+    const month = date.getMonth() + 1; // JavaScript months are 0-based
+    
+    if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return "♒︎"; // Aquarius
+    if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) return "♓︎"; // Pisces
+    if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return "♈︎"; // Aries
+    if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return "♉︎"; // Taurus
+    if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return "♊︎"; // Gemini
+    if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return "♋︎"; // Cancer
+    if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return "♌︎"; // Leo
+    if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return "♍︎"; // Virgo
+    if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return "♎︎"; // Libra
+    if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return "♏︎"; // Scorpio
+    if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return "♐︎"; // Sagittarius
+    return "♑︎"; // Capricorn
+  };
+  
+  const getZodiacName = (date: Date) => {
+    const day = date.getDate();
+    const month = date.getMonth() + 1; // JavaScript months are 0-based
+    
+    if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return "Водолей"; // Aquarius
+    if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) return "Рыбы"; // Pisces
+    if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return "Овен"; // Aries
+    if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return "Телец"; // Taurus
+    if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return "Близнецы"; // Gemini
+    if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return "Рак"; // Cancer
+    if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return "Лев"; // Leo
+    if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return "Дева"; // Virgo
+    if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return "Весы"; // Libra
+    if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return "Скорпион"; // Scorpio
+    if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return "Стрелец"; // Sagittarius
+    return "Козерог"; // Capricorn
+  };
 
   return (
     <div className="glass rounded-xl overflow-hidden">
@@ -49,6 +85,9 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Calendar className="h-3.5 w-3.5 mr-1.5" />
                     <span>{formatDate(employee.upcomingBirthday)}</span>
+                    <span className="mx-1.5 text-lg" title={getZodiacName(employee.upcomingBirthday)}>
+                      {getZodiacSign(employee.upcomingBirthday)}
+                    </span>
                   </div>
                 </div>
               </div>

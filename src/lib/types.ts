@@ -117,3 +117,38 @@ export interface DashboardStats {
   totalSites: number;
   activeSites: number;
 }
+
+export interface ToolboxComment {
+  id: string;
+  authorId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface ToolboxItem {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  image: string;
+  description: string;
+  link?: string;
+  authorId: string;
+  createdAt: string;
+  likes: number;
+  dislikes: number;
+  comments?: ToolboxComment[];
+}
+
+export interface LibraryItem {
+  id: string;
+  name: string;
+  type: 'book' | 'instruction' | 'standard';
+  author?: string;
+  year?: string;
+  description: string;
+  externalLink?: string;
+  fileUrl?: string;
+  authorId: string;
+  createdAt: string;
+}

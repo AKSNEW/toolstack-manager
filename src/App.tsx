@@ -8,6 +8,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Index from "./pages/Index";
 import ToolsPage from "./pages/ToolsPage";
+import ToolboxPage from "./pages/ToolboxPage";
+import LibraryPage from "./pages/LibraryPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import CrewsPage from "./pages/CrewsPage";
 import SitesPage from "./pages/SitesPage";
@@ -33,6 +35,8 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/tools" element={<ToolsPage />} />
+                    <Route path="/toolbox" element={<ToolboxPage />} />
+                    <Route path="/library" element={<LibraryPage />} />
                     <Route path="/employees" element={<EmployeesPage />} />
                     <Route path="/crews" element={<CrewsPage />} />
                     <Route path="/sites" element={<SitesPage />} />

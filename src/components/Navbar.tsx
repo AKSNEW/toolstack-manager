@@ -10,7 +10,9 @@ import {
   Users, 
   Building,
   HardHat,
-  Calculator
+  Calculator,
+  Wrench,
+  BookOpen
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -30,6 +32,16 @@ const navItems: NavItem[] = [
     href: "/tools",
     label: "Инструменты",
     icon: Package,
+  },
+  {
+    href: "/toolbox",
+    label: "Ящик инструментов",
+    icon: Wrench,
+  },
+  {
+    href: "/library",
+    label: "Библиотека",
+    icon: BookOpen,
   },
   {
     href: "/employees",
