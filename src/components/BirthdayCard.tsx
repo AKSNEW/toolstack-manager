@@ -3,6 +3,7 @@ import React from 'react';
 import { Employee } from '@/lib/types';
 import { Calendar, Gift, CalendarDays } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface BirthdayCardProps {
   employees: Array<Employee & { upcomingBirthday: Date; daysUntil: number }>;
@@ -59,6 +60,20 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
     return "Козерог"; // Capricorn
   };
 
+  // Расчет возраста сотрудника
+  const calculateAge = (birthDate: string): number => {
+    const today = new Date();
+    const dob = new Date(birthDate);
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   return (
     <div className="glass rounded-xl overflow-hidden">
       <div className="px-6 py-5 border-b border-border flex items-center justify-between">
@@ -85,9 +100,23 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Calendar className="h-3.5 w-3.5 mr-1.5" />
                     <span>{formatDate(employee.upcomingBirthday)}</span>
-                    <span className="mx-1.5 text-lg" title={getZodiacName(employee.upcomingBirthday)}>
-                      {getZodiacSign(employee.upcomingBirthday)}
-                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="mx-1.5 text-lg cursor-help">
+                            {getZodiacSign(employee.upcomingBirthday)}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{getZodiacName(employee.upcomingBirthday)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    {employee.birthDate && (
+                      <span className="ml-2 text-xs bg-gray-100 rounded-full px-2 py-0.5">
+                        {calculateAge(employee.birthDate)} лет
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

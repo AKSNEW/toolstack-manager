@@ -12,14 +12,22 @@ import {
   HardHat,
   Calculator,
   Wrench,
-  BookOpen
+  BookOpen,
+  ChevronDown
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NavItem {
   href: string;
   label: string;
   icon: any;
+  children?: NavItem[];
 }
 
 const navItems: NavItem[] = [
@@ -29,14 +37,21 @@ const navItems: NavItem[] = [
     icon: Home,
   },
   {
-    href: "/tools",
+    href: "#",
     label: "Инструменты",
     icon: Package,
-  },
-  {
-    href: "/toolbox",
-    label: "Ящик инструментов",
-    icon: Wrench,
+    children: [
+      {
+        href: "/tools",
+        label: "Список инструментов",
+        icon: Package,
+      },
+      {
+        href: "/toolbox",
+        label: "Ящик инструментов",
+        icon: Wrench,
+      },
+    ]
   },
   {
     href: "/library",
@@ -44,14 +59,21 @@ const navItems: NavItem[] = [
     icon: BookOpen,
   },
   {
-    href: "/employees",
-    label: "Сотрудники",
+    href: "#",
+    label: "Персонал",
     icon: Users,
-  },
-  {
-    href: "/crews",
-    label: "Бригады",
-    icon: HardHat,
+    children: [
+      {
+        href: "/employees",
+        label: "Сотрудники",
+        icon: Users,
+      },
+      {
+        href: "/crews",
+        label: "Бригады",
+        icon: HardHat,
+      },
+    ]
   },
   {
     href: "/sites",
@@ -69,6 +91,14 @@ const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
+
+  const isActiveRoute = (item: NavItem): boolean => {
+    if (item.href === location.pathname) return true;
+    if (item.children) {
+      return item.children.some(child => child.href === location.pathname);
+    }
+    return false;
+  };
 
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -92,19 +122,54 @@ const Navbar = () => {
           {!isMobile && (
             <div className="hidden gap-1 md:flex">
               {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors hover:text-foreground",
-                    location.pathname === item.href
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.label}
-                </Link>
+                item.children ? (
+                  <DropdownMenu key={item.label}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className={cn(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors hover:text-foreground",
+                          isActiveRoute(item)
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.label}
+                        <ChevronDown className="ml-1 h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {item.children.map((child) => (
+                        <DropdownMenuItem key={child.href} asChild>
+                          <Link
+                            to={child.href}
+                            className={cn(
+                              "flex w-full items-center",
+                              location.pathname === child.href && "bg-accent/50"
+                            )}
+                          >
+                            <child.icon className="mr-2 h-4 w-4" />
+                            {child.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors hover:text-foreground",
+                      location.pathname === item.href
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.label}
+                  </Link>
+                )
               ))}
             </div>
           )}
@@ -116,20 +181,47 @@ const Navbar = () => {
         <div className="container border-t md:hidden">
           <div className="grid grid-flow-row text-sm py-3 gap-2">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex w-full items-center rounded-md px-3 py-2",
-                  location.pathname === item.href
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setShowMobileMenu(false)}
-              >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.label}
-              </Link>
+              item.children ? (
+                <div key={item.label} className="py-1">
+                  <div className="flex items-center px-3 py-2 font-medium">
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.label}
+                  </div>
+                  <div className="pl-4 mt-1 space-y-1">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        to={child.href}
+                        className={cn(
+                          "flex w-full items-center rounded-md px-3 py-2",
+                          location.pathname === child.href
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        <child.icon className="mr-2 h-4 w-4" />
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={cn(
+                    "flex w-full items-center rounded-md px-3 py-2",
+                    location.pathname === item.href
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Link>
+              )
             ))}
           </div>
         </div>
