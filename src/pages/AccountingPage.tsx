@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,12 +12,10 @@ import { toast } from 'sonner';
 import ExpenseReceiptForm from '@/components/ExpenseReceiptForm';
 import AccountantChat from '@/components/AccountantChat';
 
-// Helper function to get employee by ID
 const getEmployeeById = (id: string) => {
   return employees.find(emp => emp.id === id);
 };
 
-// Helper function to format currency
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -32,7 +29,6 @@ const AccountingPage = () => {
   const [isChatDialogOpen, setIsChatDialogOpen] = useState(false);
 
   const handleApproveReceipt = (id: string) => {
-    // Find the receipt and change its status
     const receiptIndex = expenseReceipts.findIndex(r => r.id === id);
     if (receiptIndex !== -1) {
       expenseReceipts[receiptIndex].status = 'approved';
@@ -41,7 +37,6 @@ const AccountingPage = () => {
   };
 
   const handleRejectReceipt = (id: string) => {
-    // Find the receipt and change its status
     const receiptIndex = expenseReceipts.findIndex(r => r.id === id);
     if (receiptIndex !== -1) {
       expenseReceipts[receiptIndex].status = 'rejected';
@@ -50,7 +45,6 @@ const AccountingPage = () => {
   };
 
   const handleApproveExpense = (id: string) => {
-    // Find the travel expense and change its status
     const expenseIndex = travelExpenses.findIndex(e => e.id === id);
     if (expenseIndex !== -1) {
       travelExpenses[expenseIndex].status = 'approved';
@@ -59,7 +53,6 @@ const AccountingPage = () => {
   };
 
   const handleRejectExpense = (id: string) => {
-    // Find the travel expense and change its status
     const expenseIndex = travelExpenses.findIndex(e => e.id === id);
     if (expenseIndex !== -1) {
       travelExpenses[expenseIndex].status = 'rejected';
@@ -78,7 +71,6 @@ const AccountingPage = () => {
             </p>
           </div>
           
-          {/* Floating action button for mobile */}
           <div className="fixed bottom-6 right-6 z-10 sm:hidden">
             <Button 
               onClick={() => setIsReceiptDialogOpen(true)}
@@ -90,7 +82,6 @@ const AccountingPage = () => {
             </Button>
           </div>
           
-          {/* Desktop buttons */}
           <div className="hidden sm:flex space-x-2">
             <Button 
               variant="outline"
@@ -109,7 +100,6 @@ const AccountingPage = () => {
             </Button>
           </div>
           
-          {/* Mobile chat button */}
           <div className="sm:hidden flex justify-center">
             <Button 
               variant="outline"
@@ -122,7 +112,6 @@ const AccountingPage = () => {
           </div>
         </div>
 
-        {/* Add a prominent button for adding receipts on mobile before tabs */}
         <div className="mb-6 sm:hidden">
           <Button 
             onClick={() => setIsReceiptDialogOpen(true)}
@@ -146,7 +135,6 @@ const AccountingPage = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Expense Receipts Tab */}
           <TabsContent value="receipts" className="space-y-6">
             <div className="glass p-4 rounded-xl mb-6">
               <div className="flex items-center space-x-2">
@@ -269,7 +257,6 @@ const AccountingPage = () => {
             </div>
           </TabsContent>
 
-          {/* Travel Expenses Tab */}
           <TabsContent value="travel" className="space-y-6">
             <div className="glass p-4 rounded-xl mb-6">
               <div className="flex items-center space-x-2">
@@ -323,12 +310,11 @@ const AccountingPage = () => {
                       <div className="text-sm mb-3">{expense.purpose}</div>
                       
                       <div className="space-y-4">
-                        {/* Per Diem Section */}
                         {expense.perDiem && (
                           <div className="bg-muted/30 p-4 rounded-lg mb-4">
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2 font-medium">
-                                <BadgeRussianRubble className="h-5 w-5 text-primary" />
+                                <BadgeRussianRuble className="h-5 w-5 text-primary" />
                                 <span>Суточные</span>
                               </div>
                               <div className="text-right">
@@ -437,7 +423,6 @@ const AccountingPage = () => {
         </Tabs>
       </div>
 
-      {/* Add Receipt Dialog */}
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -451,7 +436,6 @@ const AccountingPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Chat with Accountant Dialog */}
       <Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
         <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col p-0">
           <DialogHeader className="px-6 pt-6 pb-0">
