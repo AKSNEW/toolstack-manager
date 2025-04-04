@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { tools, Tool } from '@/lib/data';
 import ToolCard from '@/components/ToolCard';
@@ -10,11 +11,14 @@ import {
   AlertTriangle, 
   Clock, 
   Check,
-  Plus
+  Plus,
+  Wrench
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import AddToolForm from '@/components/AddToolForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EdcToolForm from '@/components/EdcToolForm';
 
 const ToolsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,12 +26,14 @@ const ToolsPage = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [isAddToolDialogOpen, setIsAddToolDialogOpen] = useState(false);
+  const [isAddEdcDialogOpen, setIsAddEdcDialogOpen] = useState(false);
   const [toolsList, setToolsList] = useState<Tool[]>(tools);
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   // Get unique categories
   const categories = [...new Set(toolsList.map(tool => tool.category))];
   
-  // Filter tools based on search and filters
+  // Filter tools based on search, filters and tabs
   const filteredTools = toolsList.filter(tool => {
     // Search term filter
     const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,7 +45,11 @@ const ToolsPage = () => {
     // Status filter
     const matchesStatus = statusFilter ? tool.status === statusFilter : true;
     
-    return matchesSearch && matchesCategory && matchesStatus;
+    // Tab filter
+    const matchesTab = activeTab === "all" ? true : 
+                      (activeTab === "edc" ? !!tool.isEdc : !tool.isEdc);
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesTab;
   });
 
   const handleToolClick = (tool: Tool) => {
@@ -64,6 +74,14 @@ const ToolsPage = () => {
     setIsAddToolDialogOpen(false);
   };
 
+  const openAddEdcDialog = () => {
+    setIsAddEdcDialogOpen(true);
+  };
+
+  const closeAddEdcDialog = () => {
+    setIsAddEdcDialogOpen(false);
+  };
+
   const handleAddTool = (newTool: Omit<Tool, 'id' | 'status' | 'lastCheckedOut'>) => {
     const tool: Tool = {
       ...newTool,
@@ -73,6 +91,41 @@ const ToolsPage = () => {
     
     setToolsList(prev => [...prev, tool]);
     closeAddToolDialog();
+  };
+
+  const handleAddEdcTool = (newTool: Omit<Tool, 'id' | 'status' | 'lastCheckedOut'> & {isEdc: true, links: string[]}) => {
+    const tool: Tool = {
+      ...newTool,
+      id: `edc${toolsList.length + 1}`,
+      status: 'available',
+    };
+    
+    setToolsList(prev => [...prev, tool]);
+    closeAddEdcDialog();
+  };
+
+  const handleVoteTool = (toolId: string, value: 1 | -1) => {
+    setToolsList(prev => prev.map(tool => {
+      if (tool.id === toolId) {
+        // For simplicity, we use a fixed user ID here
+        const userId = "current-user";
+        const votes = tool.votes || [];
+        
+        // Check if the user already voted
+        const existingVoteIndex = votes.findIndex(v => v.userId === userId);
+        
+        if (existingVoteIndex >= 0) {
+          // User already voted, update their vote
+          const updatedVotes = [...votes];
+          updatedVotes[existingVoteIndex] = { userId, value };
+          return { ...tool, votes: updatedVotes };
+        } else {
+          // New vote
+          return { ...tool, votes: [...votes, { userId, value }] };
+        }
+      }
+      return tool;
+    }));
   };
 
   // Status buttons data
@@ -92,14 +145,32 @@ const ToolsPage = () => {
               Управление инструментами и оборудованием компании
             </p>
           </div>
-          <Button 
-            onClick={openAddToolDialog} 
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Добавить инструмент</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={openAddToolDialog} 
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Добавить инструмент</span>
+            </Button>
+            <Button 
+              onClick={openAddEdcDialog} 
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Wrench className="h-4 w-4" />
+              <span>Добавить EDC набор</span>
+            </Button>
+          </div>
         </div>
+        
+        <Tabs defaultValue="all" className="mb-8" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="all">Все инструменты</TabsTrigger>
+            <TabsTrigger value="regular">Обычные инструменты</TabsTrigger>
+            <TabsTrigger value="edc">EDC наборы</TabsTrigger>
+          </TabsList>
+        </Tabs>
         
         {/* Search and filters */}
         <div className="glass rounded-xl mb-8 p-4">
@@ -173,6 +244,7 @@ const ToolsPage = () => {
                 key={tool.id} 
                 tool={tool} 
                 onClick={handleToolClick}
+                onVote={tool.isEdc ? handleVoteTool : undefined}
               />
             ))}
           </div>
@@ -238,6 +310,26 @@ const ToolsPage = () => {
                   <p>{selectedTool.description}</p>
                 </div>
                 
+                {selectedTool.isEdc && selectedTool.links && selectedTool.links.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground">Ссылки на товар</p>
+                    <ul className="space-y-1">
+                      {selectedTool.links.map((link, index) => (
+                        <li key={index}>
+                          <a 
+                            href={link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Ссылка {index + 1}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
                 {selectedTool.lastCheckedOut && (
                   <div className="space-y-2">
                     <p className="text-muted-foreground">Последняя выдача</p>
@@ -269,6 +361,22 @@ const ToolsPage = () => {
             <AddToolForm 
               onAddTool={handleAddTool}
               onCancel={closeAddToolDialog}
+              categories={categories}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Add EDC Tool Dialog */}
+        <Dialog open={isAddEdcDialogOpen} onOpenChange={setIsAddEdcDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Добавить EDC набор</DialogTitle>
+              <DialogDescription>Заполните форму для добавления нового EDC набора</DialogDescription>
+            </DialogHeader>
+            
+            <EdcToolForm 
+              onAddTool={handleAddEdcTool}
+              onCancel={closeAddEdcDialog}
               categories={categories}
             />
           </DialogContent>

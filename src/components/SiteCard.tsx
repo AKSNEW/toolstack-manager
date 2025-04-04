@@ -1,105 +1,131 @@
 
 import React from 'react';
-import { Site } from '@/lib/data';
+import { Site } from '@/lib/types';
+import { Building, Users, Calendar, CheckCircle2, Clock, FileEdit, ClipboardList } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { crews } from '@/lib/data';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { 
-  MapPin, 
-  CalendarDays, 
-  Users,
-  CheckCircle,
-  Clock,
-  FileEdit
-} from 'lucide-react';
 
 interface SiteCardProps {
   site: Site;
   onClick: (site: Site) => void;
+  onOpenDefectsJournal?: (site: Site) => void;
 }
 
-const SiteCard = ({ site, onClick }: SiteCardProps) => {
-  const assignedCrew = site.crewId ? crews.find(c => c.id === site.crewId) : null;
-  
-  const getStatusInfo = () => {
-    switch (site.status) {
-      case 'planning':
-        return { 
-          icon: FileEdit, 
-          text: 'Планирование', 
-          color: 'bg-blue-100 text-blue-700' 
-        };
-      case 'active':
-        return { 
-          icon: Clock, 
-          text: 'Активный', 
-          color: 'bg-amber-100 text-amber-700' 
-        };
-      case 'completed':
-        return { 
-          icon: CheckCircle, 
-          text: 'Завершен', 
-          color: 'bg-green-100 text-green-700' 
-        };
-      default:
-        return { 
-          icon: Clock, 
-          text: 'Неизвестно', 
-          color: 'bg-gray-100 text-gray-700' 
-        };
+const SiteCard: React.FC<SiteCardProps> = ({ site, onClick, onOpenDefectsJournal }) => {
+  const handleClick = () => {
+    onClick(site);
+  };
+
+  const handleOpenDefectsJournal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onOpenDefectsJournal) {
+      onOpenDefectsJournal(site);
     }
   };
-  
-  const statusInfo = getStatusInfo();
-  const StatusIcon = statusInfo.icon;
-  
-  return (
-    <Card 
-      className="h-full overflow-hidden hover:shadow-md transition-all cursor-pointer border border-border"
-      onClick={() => onClick(site)}
-    >
-      <CardContent className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-semibold line-clamp-1">{site.name}</h3>
-          <div className={`flex items-center px-2 py-1 rounded text-xs font-medium ${statusInfo.color}`}>
-            <StatusIcon className="h-3.5 w-3.5 mr-1" />
-            {statusInfo.text}
-          </div>
-        </div>
 
+  const getStatusIcon = () => {
+    switch (site.status) {
+      case 'planning':
+        return <FileEdit className="h-4 w-4" />;
+      case 'active':
+        return <Clock className="h-4 w-4" />;
+      case 'completed':
+        return <CheckCircle2 className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusText = () => {
+    switch (site.status) {
+      case 'planning':
+        return 'Планирование';
+      case 'active':
+        return 'Активный';
+      case 'completed':
+        return 'Завершен';
+      default:
+        return 'Неизвестно';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (site.status) {
+      case 'planning':
+        return 'bg-blue-100 text-blue-800';
+      case 'active':
+        return 'bg-amber-100 text-amber-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getAssignedCrew = () => {
+    if (!site.crewId) return null;
+    return crews.find(crew => crew.id === site.crewId);
+  };
+
+  const assignedCrew = getAssignedCrew();
+
+  return (
+    <div 
+      className="card-hover glass rounded-xl overflow-hidden cursor-pointer"
+      onClick={handleClick}
+    >
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="text-xl font-semibold">{site.name}</h3>
+          <Badge className={cn(getStatusColor())}>
+            {getStatusIcon()}
+            <span className="ml-1">{getStatusText()}</span>
+          </Badge>
+        </div>
+        
+        <p className="text-sm text-muted-foreground mb-6 line-clamp-2">{site.description}</p>
+        
         <div className="space-y-3">
-          <div className="flex items-start">
-            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 mr-2 flex-shrink-0" />
-            <p className="text-sm text-muted-foreground line-clamp-2">{site.address}</p>
+          <div className="flex items-center text-sm">
+            <Building className="h-4 w-4 mr-2 text-muted-foreground" />
+            <span>{site.address}</span>
           </div>
           
-          {site.startDate && (
-            <div className="flex items-center">
-              <CalendarDays className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0" />
-              <p className="text-sm">
-                {new Date(site.startDate).toLocaleDateString('ru-RU')}
-                {site.endDate && ` - ${new Date(site.endDate).toLocaleDateString('ru-RU')}`}
-              </p>
+          {assignedCrew && (
+            <div className="flex items-center text-sm">
+              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Бригада: {assignedCrew.name}</span>
             </div>
           )}
           
-          <p className="text-sm line-clamp-2">{site.description}</p>
+          {site.startDate && (
+            <div className="flex items-center text-sm">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>
+                Начало: {new Date(site.startDate).toLocaleDateString('ru-RU')}
+                {site.endDate && ` - ${new Date(site.endDate).toLocaleDateString('ru-RU')}`}
+              </span>
+            </div>
+          )}
         </div>
-      </CardContent>
-      
-      <CardFooter className="px-6 py-4 bg-muted/50 border-t">
-        {assignedCrew ? (
-          <div className="flex items-center">
-            <Users className="h-4 w-4 text-muted-foreground mr-2" />
-            <span className="text-sm font-medium">{assignedCrew.name}</span>
-          </div>
-        ) : (
-          <div className="flex items-center text-muted-foreground">
-            <Users className="h-4 w-4 mr-2" />
-            <span className="text-sm">Бригада не назначена</span>
+        
+        {onOpenDefectsJournal && (
+          <div className="mt-5 pt-5 border-t border-border flex justify-end">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="text-xs flex items-center gap-1.5"
+              onClick={handleOpenDefectsJournal}
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Журнал неисправностей
+            </Button>
           </div>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 };
 

@@ -9,18 +9,21 @@ import {
   X,
   CheckCircle,
   Clock,
-  FileEdit
+  FileEdit,
+  ClipboardList
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import AddSiteForm from '@/components/AddSiteForm';
 import SiteCard from '@/components/SiteCard';
+import SiteDefectsJournal from '@/components/SiteDefectsJournal';
 
 const SitesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [isDefectJournalOpen, setIsDefectJournalOpen] = useState(false);
 
   // Filter sites based on search and status
   const filteredSites = sites.filter(site => {
@@ -35,6 +38,11 @@ const SitesPage = () => {
 
   const handleSiteClick = (site: Site) => {
     setSelectedSite(site);
+  };
+
+  const openDefectJournal = (site: Site) => {
+    setSelectedSite(site);
+    setIsDefectJournalOpen(true);
   };
 
   // Status buttons data
@@ -129,6 +137,7 @@ const SitesPage = () => {
                 key={site.id} 
                 site={site} 
                 onClick={handleSiteClick}
+                onOpenDefectsJournal={() => openDefectJournal(site)}
               />
             ))}
           </div>
@@ -155,6 +164,29 @@ const SitesPage = () => {
               <DialogTitle>Добавить новый объект</DialogTitle>
             </DialogHeader>
             <AddSiteForm onSuccess={() => setIsAddDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
+        
+        {/* Defects Journal Dialog */}
+        <Dialog 
+          open={isDefectJournalOpen} 
+          onOpenChange={(open) => {
+            setIsDefectJournalOpen(open);
+            if (!open) setSelectedSite(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Журнал неисправностей
+                {selectedSite && <span className="text-muted-foreground ml-2">— {selectedSite.name}</span>}
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedSite && (
+              <SiteDefectsJournal siteId={selectedSite.id} siteName={selectedSite.name} />
+            )}
           </DialogContent>
         </Dialog>
       </div>

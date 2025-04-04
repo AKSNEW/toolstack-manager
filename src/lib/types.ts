@@ -1,4 +1,3 @@
-
 // Type definitions for the application
 
 export interface Tool {
@@ -13,6 +12,12 @@ export interface Tool {
   };
   image: string;
   description: string;
+  isEdc?: boolean;
+  links?: string[];
+  votes?: {
+    userId: string;
+    value: 1 | -1;
+  }[];
 }
 
 export interface DriverLicense {
@@ -151,4 +156,17 @@ export interface LibraryItem {
   fileUrl?: string;
   authorId: string;
   createdAt: string;
+}
+
+export interface Defect {
+  id: string;
+  siteId: string;
+  title: string;
+  description: string;
+  reportedBy: string;
+  reportedDate: string;
+  status: 'open' | 'in-progress' | 'resolved';
+  resolvedBy?: string;
+  resolvedDate?: string;
+  resolution?: string;
 }
