@@ -22,7 +22,8 @@ import {
   ImageIcon,
   Video,
   PanelRight,
-  PanelRightClose
+  PanelRightClose,
+  Wrench
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -43,6 +44,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SiteDefectsJournalProps {
   siteId: string;
@@ -56,7 +64,7 @@ const mockDefects: Defect[] = [
     siteId: 's1',
     title: 'Протечка в крыше корпуса А',
     description: 'При сильном дожде обнаружена протечка на 5 этаже в районе лифтовой шахты.',
-    reportedBy: 'emp-001',
+    reportedBy: 'e1',
     reportedDate: '2023-04-15T10:30:00Z',
     status: 'open',
     media: [
@@ -66,7 +74,7 @@ const mockDefects: Defect[] = [
         type: 'image',
         url: 'https://images.unsplash.com/photo-1580901368919-7738efb0f87e',
         description: 'Следы воды на потолке возле лифта',
-        uploadedBy: 'emp-001',
+        uploadedBy: 'e1',
         uploadedDate: '2023-04-15T10:45:00Z',
       }
     ]
@@ -76,7 +84,7 @@ const mockDefects: Defect[] = [
     siteId: 's1',
     title: 'Трещина в фундаменте',
     description: 'Во время осмотра обнаружена трещина в фундаменте длиной около 1 метра в юго-восточной части здания.',
-    reportedBy: 'emp-002',
+    reportedBy: 'e2',
     reportedDate: '2023-04-10T08:45:00Z',
     status: 'in-progress',
     media: [
@@ -86,7 +94,7 @@ const mockDefects: Defect[] = [
         type: 'image',
         url: 'https://images.unsplash.com/photo-1603994189975-502a1aefdbb5',
         description: 'Трещина в фундаменте - общий вид',
-        uploadedBy: 'emp-002',
+        uploadedBy: 'e2',
         uploadedDate: '2023-04-10T09:00:00Z',
       },
       {
@@ -95,7 +103,7 @@ const mockDefects: Defect[] = [
         type: 'image',
         url: 'https://images.unsplash.com/photo-1621503828642-a756be7255c8',
         description: 'Трещина в фундаменте - крупный план',
-        uploadedBy: 'emp-002',
+        uploadedBy: 'e2',
         uploadedDate: '2023-04-10T09:05:00Z',
       },
       {
@@ -104,7 +112,7 @@ const mockDefects: Defect[] = [
         type: 'video',
         url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
         description: 'Видео осмотра трещины',
-        uploadedBy: 'emp-002',
+        uploadedBy: 'e2',
         uploadedDate: '2023-04-10T09:10:00Z',
         thumbnailUrl: 'https://images.unsplash.com/photo-1603994189975-502a1aefdbb5'
       }
@@ -115,10 +123,10 @@ const mockDefects: Defect[] = [
     siteId: 's1',
     title: 'Неисправность электропроводки',
     description: 'В корпусе Б на 3-м этаже обнаружены проблемы с электропроводкой, розетки не работают.',
-    reportedBy: 'emp-003',
+    reportedBy: 'e3',
     reportedDate: '2023-04-05T14:20:00Z',
     status: 'resolved',
-    resolvedBy: 'emp-004',
+    resolvedBy: 'e4',
     resolvedDate: '2023-04-08T16:30:00Z',
     resolution: 'Заменена электропроводка и установлены новые розетки.',
   },
@@ -127,7 +135,7 @@ const mockDefects: Defect[] = [
     siteId: 's2',
     title: 'Проблема с вентиляцией',
     description: 'Система вентиляции работает с перебоями на 2-м этаже.',
-    reportedBy: 'emp-001',
+    reportedBy: 'e1',
     reportedDate: '2023-04-12T11:15:00Z',
     status: 'open',
   },
@@ -150,6 +158,7 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
   });
   
   const [resolution, setResolution] = useState('');
+  const [resolvedBy, setResolvedBy] = useState('');
   
   // Filter defects by site, search term, status, and active tab
   const filteredDefects = defects.filter(defect => {
@@ -183,7 +192,7 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
       siteId,
       title: newDefect.title,
       description: newDefect.description,
-      reportedBy: 'emp-001', // Current user ID
+      reportedBy: 'e1', // Current user ID
       reportedDate: new Date().toISOString(),
       status: 'open',
       media: [],
@@ -200,10 +209,10 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
   };
   
   const handleResolveDefect = () => {
-    if (!selectedDefect || !resolution.trim()) {
+    if (!selectedDefect || !resolution.trim() || !resolvedBy) {
       toast({
         title: 'Ошибка',
-        description: 'Необходимо указать решение проблемы',
+        description: 'Необходимо указать решение проблемы и исполнителя',
         variant: 'destructive',
       });
       return;
@@ -213,13 +222,14 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
       defect.id === selectedDefect.id ? {
         ...defect,
         status: 'resolved',
-        resolvedBy: 'emp-001', // Current user ID
+        resolvedBy: resolvedBy,
         resolvedDate: new Date().toISOString(),
         resolution,
       } : defect
     ));
     
     setResolution('');
+    setResolvedBy('');
     setSelectedDefect(null);
     setIsResolveDefectOpen(false);
     
@@ -418,7 +428,15 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
             <Collapsible key={defect.id} className="glass p-4 rounded-lg">
               <div className="flex justify-between items-start mb-3">
                 <CollapsibleTrigger className="text-left">
-                  <h3 className="font-medium">{defect.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium">{defect.title}</h3>
+                    {defect.status === 'resolved' && (
+                      <Badge className="bg-green-100 text-green-800">
+                        <Wrench className="h-3 w-3 mr-1" />
+                        <span>Исправлено: {getEmployeeName(defect.resolvedBy || '')}</span>
+                      </Badge>
+                    )}
+                  </div>
                 </CollapsibleTrigger>
                 <div className="flex items-center gap-2">
                   <Badge className={getStatusColor(defect.status)}>
@@ -530,16 +548,22 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
                 
                 {defect.status === 'resolved' && defect.resolution && (
                   <div className="mt-4 pt-4 border-t border-border">
-                    <h4 className="text-sm font-medium mb-1">Решение:</h4>
-                    <p className="text-sm">{defect.resolution}</p>
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-green-600" />
+                      Информация об устранении:
+                    </h4>
                     
-                    <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4 mt-2">
+                    <div className="bg-green-50 p-3 rounded-md mb-3">
+                      <p className="text-sm">{defect.resolution}</p>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4">
                       <div>
-                        <span className="block">Кем устранено:</span>
+                        <span className="block font-medium">Кем устранено:</span>
                         <span>{getEmployeeName(defect.resolvedBy || '')}</span>
                       </div>
                       <div>
-                        <span className="block">Дата устранения:</span>
+                        <span className="block font-medium">Дата устранения:</span>
                         <span>{formatDate(defect.resolvedDate || '')}</span>
                       </div>
                     </div>
@@ -616,16 +640,35 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
           <DialogHeader>
             <DialogTitle>Отметить как устраненную</DialogTitle>
             <DialogDescription>
-              Укажите, как была устранена неисправность
+              Укажите, как была устранена неисправность и кто выполнил работу
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="resolution">Описание решения</Label>
+              <Label htmlFor="resolvedBy">Кем устранено</Label>
+              <Select
+                value={resolvedBy}
+                onValueChange={setResolvedBy}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите сотрудника" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(employee => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="resolution">Описание выполненных работ</Label>
               <Textarea
                 id="resolution"
-                placeholder="Опишите, как была устранена неисправность"
+                placeholder="Опишите подробно, как была устранена неисправность и какие работы были выполнены"
                 rows={4}
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}

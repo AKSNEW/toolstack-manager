@@ -1,71 +1,116 @@
-
-import React from 'react';
-import { Employee } from '@/lib/data';
-import { User, Briefcase, Building, Phone, Mail, Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { Employee } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Mail, Phone, User, BadgeCheck, Shirt } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Copy, Edit, Trash } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import EmployeeClothingSizeForm from './EmployeeClothingSizeForm';
 
 interface EmployeeCardProps {
   employee: Employee;
-  onClick?: (employee: Employee) => void;
+  onUpdate: (employee: Employee) => void;
+  onDelete: (id: string) => void;
 }
 
-const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onClick }) => {
-  const handleClick = () => {
-    if (onClick) onClick(employee);
+const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onUpdate, onDelete }) => {
+  const { toast } = useToast();
+  const [isClothingSizeOpen, setIsClothingSizeOpen] = useState(false);
+
+  const handleCopyToClipboard = () => {
+    const employeeInfo = `
+      Name: ${employee.name}
+      Position: ${employee.position}
+      Department: ${employee.department}
+      Email: ${employee.email}
+      Phone: ${employee.phone}
+    `;
+
+    navigator.clipboard.writeText(employeeInfo);
+    toast({
+      title: "Скопировано в буфер обмена",
+      description: "Информация о сотруднике скопирована в буфер обмена",
+    });
   };
 
   return (
-    <div 
-      className="card-hover glass rounded-xl overflow-hidden flex flex-col h-full"
-      onClick={handleClick}
-    >
-      <div className="p-6 flex flex-col items-center text-center">
-        <div className="relative mb-4">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 shadow-lg">
-            <img
-              src={employee.avatar}
-              alt={employee.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 shadow-lg">
-            <User className="h-4 w-4" />
+    <Card className="glass">
+      <CardHeader>
+        <div className="flex items-center">
+          <Avatar className="mr-4">
+            <AvatarImage src={employee.avatar} alt={employee.name} />
+            <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle>{employee.name}</CardTitle>
+            <CardDescription>{employee.position}</CardDescription>
           </div>
         </div>
-        
-        <h3 className="text-lg font-semibold">{employee.name}</h3>
-        <div className="flex items-center justify-center space-x-1 mt-1 text-muted-foreground">
-          <Briefcase className="h-3.5 w-3.5" />
-          <span className="text-sm">{employee.position}</span>
-        </div>
-        
-        <div className="w-full mt-5 space-y-3">
-          <div className="flex items-center text-sm">
-            <Building className="h-4 w-4 text-muted-foreground mr-2.5" />
-            <span>{employee.department}</span>
+      </CardHeader>
+      <CardContent>
+        <div className="text-sm text-muted-foreground space-y-1">
+          <div className="flex items-center">
+            <Mail className="h-4 w-4 mr-2" />
+            <span>{employee.email}</span>
           </div>
-          
-          <div className="flex items-center text-sm">
-            <Mail className="h-4 w-4 text-muted-foreground mr-2.5" />
-            <span className="truncate">{employee.email}</span>
-          </div>
-          
-          <div className="flex items-center text-sm">
-            <Phone className="h-4 w-4 text-muted-foreground mr-2.5" />
+          <div className="flex items-center">
+            <Phone className="h-4 w-4 mr-2" />
             <span>{employee.phone}</span>
           </div>
-        </div>
-        
-        <div className="w-full mt-5 pt-5 border-t border-border">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Активные заказы:</span>
-            <span className="flex items-center bg-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-medium">
-              <Package className="h-3.5 w-3.5 mr-1" />
-              {employee.activeRentals.length}
-            </span>
+          <div className="flex items-center">
+            <User className="h-4 w-4 mr-2" />
+            <span>{employee.department}</span>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+      <CardFooter className="flex justify-between items-center">
+        <div className="text-sm text-muted-foreground">
+          <BadgeCheck className="h-4 w-4 mr-1 inline-block" />
+          <span>{employee.activeRentals.length} Активные аренды</span>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="px-2">
+              Действия
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleCopyToClipboard}>
+              <Copy className="h-4 w-4 mr-2" />
+              Копировать информацию
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Edit className="h-4 w-4 mr-2" />
+              Редактировать
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDelete(employee.id)}>
+              <Trash className="h-4 w-4 mr-2" />
+              Удалить
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setIsClothingSizeOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <Shirt className="h-4 w-4 mr-2" />
+              Размеры одежды
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardFooter>
+      <EmployeeClothingSizeForm
+        employee={employee}
+        onUpdate={onUpdate}
+        open={isClothingSizeOpen}
+        onOpenChange={setIsClothingSizeOpen}
+      />
+    </Card>
   );
 };
 

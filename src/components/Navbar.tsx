@@ -13,7 +13,9 @@ import {
   Calculator,
   Wrench,
   BookOpen,
-  ChevronDown
+  ChevronDown,
+  FileCode,
+  MessageSquare
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -73,12 +75,22 @@ const navItems: NavItem[] = [
         label: "Бригады",
         icon: HardHat,
       },
+      {
+        href: "/union",
+        label: "Профсоюз",
+        icon: MessageSquare,
+      },
     ]
   },
   {
     href: "/sites",
     label: "Объекты",
     icon: Building,
+  },
+  {
+    href: "/wiring-diagrams",
+    label: "Схемы",
+    icon: FileCode,
   },
   {
     href: "/accounting",

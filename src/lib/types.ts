@@ -22,6 +22,14 @@ export interface Tool {
   price?: number;
 }
 
+export interface ClothingSize {
+  shirt: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL';
+  pants: number; // Waist size
+  shoes: number; // EU size
+  gloves: 'XS' | 'S' | 'M' | 'L' | 'XL';
+  helmet?: 'S' | 'M' | 'L' | 'XL';
+}
+
 export interface DriverLicense {
   number: string;
   category: string;
@@ -46,6 +54,7 @@ export interface Employee {
     checkoutDate: string;
     returnDate?: string;
   }[];
+  clothingSize?: ClothingSize;
 }
 
 export interface SubCrew {
@@ -183,4 +192,27 @@ export interface SiteMedia {
   uploadedBy: string;
   uploadedDate: string;
   thumbnailUrl?: string; // For videos
+}
+
+export interface WiringDiagram {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  category: string;
+  createdBy: string;
+  createdAt: string;
+  comments: DiagramComment[];
+  votes: {
+    userId: string;
+    value: 1 | -1;
+  }[];
+}
+
+export interface DiagramComment {
+  id: string;
+  diagramId: string;
+  authorId: string;
+  content: string;
+  createdAt: string;
 }

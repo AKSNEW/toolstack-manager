@@ -19,6 +19,13 @@ export const employees: Employee[] = [
       expiryDate: '2032-03-20',
       issuedBy: 'ГИБДД 7701'
     },
+    clothingSize: {
+      shirt: 'L',
+      pants: 34,
+      shoes: 43,
+      gloves: 'L',
+      helmet: 'L'
+    },
     activeRentals: ['t6'],
     rentalHistory: [
       {
@@ -48,6 +55,13 @@ export const employees: Employee[] = [
       expiryDate: '2030-06-15',
       issuedBy: 'ГИБДД 7702'
     },
+    clothingSize: {
+      shirt: 'S',
+      pants: 28,
+      shoes: 38,
+      gloves: 'S',
+      helmet: 'S'
+    },
     activeRentals: [],
     rentalHistory: [
       {
@@ -66,6 +80,13 @@ export const employees: Employee[] = [
     phone: '+7 (345) 678-9012',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
     birthDate: '1990-01-30',
+    clothingSize: {
+      shirt: 'M',
+      pants: 32,
+      shoes: 42,
+      gloves: 'M',
+      helmet: 'M'
+    },
     activeRentals: ['t2'],
     rentalHistory: [
       {
@@ -94,6 +115,13 @@ export const employees: Employee[] = [
       issueDate: '2013-09-05',
       expiryDate: '2033-09-05',
       issuedBy: 'ГИБДД 7703'
+    },
+    clothingSize: {
+      shirt: 'S',
+      pants: 30,
+      shoes: 39,
+      gloves: 'S',
+      helmet: 'M'
     },
     activeRentals: [],
     rentalHistory: [
