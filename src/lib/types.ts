@@ -18,6 +18,7 @@ export interface Tool {
     userId: string;
     value: 1 | -1;
   }[];
+  price?: number;
 }
 
 export interface DriverLicense {
