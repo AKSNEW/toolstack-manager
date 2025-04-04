@@ -1,3 +1,4 @@
+
 // Type definitions for the application
 
 export interface Tool {
@@ -170,4 +171,16 @@ export interface Defect {
   resolvedBy?: string;
   resolvedDate?: string;
   resolution?: string;
+  media?: SiteMedia[]; // Adding media attachments
+}
+
+export interface SiteMedia {
+  id: string;
+  defectId: string;
+  type: 'image' | 'video';
+  url: string;
+  description?: string;
+  uploadedBy: string;
+  uploadedDate: string;
+  thumbnailUrl?: string; // For videos
 }

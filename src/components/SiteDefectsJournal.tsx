@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Defect } from '@/lib/types';
+import { Defect, SiteMedia } from '@/lib/types';
 import { employees } from '@/lib/data/employees';
+import SiteMediaForm from './SiteMediaForm';
+import SiteMediaGallery from './SiteMediaGallery';
 import { 
   AlertTriangle, 
   Clock, 
@@ -16,7 +18,11 @@ import {
   Plus, 
   Search, 
   X,
-  ChevronDown 
+  ChevronDown,
+  ImageIcon,
+  Video,
+  PanelRight,
+  PanelRightClose
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -32,6 +38,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface SiteDefectsJournalProps {
   siteId: string;
@@ -48,6 +59,17 @@ const mockDefects: Defect[] = [
     reportedBy: 'emp-001',
     reportedDate: '2023-04-15T10:30:00Z',
     status: 'open',
+    media: [
+      {
+        id: 'media-001',
+        defectId: 'def-001',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1580901368919-7738efb0f87e',
+        description: 'Следы воды на потолке возле лифта',
+        uploadedBy: 'emp-001',
+        uploadedDate: '2023-04-15T10:45:00Z',
+      }
+    ]
   },
   {
     id: 'def-002',
@@ -57,6 +79,36 @@ const mockDefects: Defect[] = [
     reportedBy: 'emp-002',
     reportedDate: '2023-04-10T08:45:00Z',
     status: 'in-progress',
+    media: [
+      {
+        id: 'media-002',
+        defectId: 'def-002',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1603994189975-502a1aefdbb5',
+        description: 'Трещина в фундаменте - общий вид',
+        uploadedBy: 'emp-002',
+        uploadedDate: '2023-04-10T09:00:00Z',
+      },
+      {
+        id: 'media-003',
+        defectId: 'def-002',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1621503828642-a756be7255c8',
+        description: 'Трещина в фундаменте - крупный план',
+        uploadedBy: 'emp-002',
+        uploadedDate: '2023-04-10T09:05:00Z',
+      },
+      {
+        id: 'media-004',
+        defectId: 'def-002',
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        description: 'Видео осмотра трещины',
+        uploadedBy: 'emp-002',
+        uploadedDate: '2023-04-10T09:10:00Z',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1603994189975-502a1aefdbb5'
+      }
+    ]
   },
   {
     id: 'def-003',
@@ -90,6 +142,7 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
   const [isResolveDefectOpen, setIsResolveDefectOpen] = useState(false);
   const [selectedDefect, setSelectedDefect] = useState<Defect | null>(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [isAddMediaOpen, setIsAddMediaOpen] = useState(false);
   
   const [newDefect, setNewDefect] = useState({
     title: '',
@@ -133,6 +186,7 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
       reportedBy: 'emp-001', // Current user ID
       reportedDate: new Date().toISOString(),
       status: 'open',
+      media: [],
     };
     
     setDefects([...defects, newDefectObj]);
@@ -192,6 +246,40 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
         newStatus === 'open' ? 'Открыта' : 
         newStatus === 'in-progress' ? 'В работе' : 'Устранена'
       }"`,
+    });
+  };
+  
+  const handleAddMedia = (media: SiteMedia) => {
+    if (!selectedDefect) return;
+    
+    const updatedDefect = {
+      ...selectedDefect,
+      media: [...(selectedDefect.media || []), media]
+    };
+    
+    setDefects(defects.map(defect => 
+      defect.id === selectedDefect.id ? updatedDefect : defect
+    ));
+    
+    setSelectedDefect(updatedDefect);
+    setIsAddMediaOpen(false);
+  };
+  
+  const handleDeleteMedia = (mediaId: string) => {
+    if (!selectedDefect || !selectedDefect.media) return;
+    
+    const updatedMedia = selectedDefect.media.filter(media => media.id !== mediaId);
+    const updatedDefect = { ...selectedDefect, media: updatedMedia };
+    
+    setDefects(defects.map(defect => 
+      defect.id === selectedDefect.id ? updatedDefect : defect
+    ));
+    
+    setSelectedDefect(updatedDefect);
+    
+    toast({
+      title: 'Медиафайл удален',
+      description: 'Медиафайл успешно удален из записи',
     });
   };
   
@@ -327,14 +415,29 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
       {filteredDefects.length > 0 ? (
         <div className="space-y-4">
           {filteredDefects.map((defect) => (
-            <div key={defect.id} className="glass p-4 rounded-lg">
+            <Collapsible key={defect.id} className="glass p-4 rounded-lg">
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-medium">{defect.title}</h3>
+                <CollapsibleTrigger className="text-left">
+                  <h3 className="font-medium">{defect.title}</h3>
+                </CollapsibleTrigger>
                 <div className="flex items-center gap-2">
                   <Badge className={getStatusColor(defect.status)}>
                     {getStatusIcon(defect.status)}
                     <span className="ml-1">{getStatusText(defect.status)}</span>
                   </Badge>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    onClick={() => {
+                      setSelectedDefect(defect);
+                      setIsAddMediaOpen(true);
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Медиа</span>
+                  </Button>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -379,24 +482,71 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
                 </div>
               </div>
               
-              {defect.status === 'resolved' && defect.resolution && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <h4 className="text-sm font-medium mb-1">Решение:</h4>
-                  <p className="text-sm">{defect.resolution}</p>
-                  
-                  <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4 mt-2">
-                    <div>
-                      <span className="block">Кем устранено:</span>
-                      <span>{getEmployeeName(defect.resolvedBy || '')}</span>
+              <CollapsibleContent className="mt-4 pt-4 border-t border-border">
+                {/* Media gallery */}
+                {defect.media && defect.media.length > 0 ? (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        <Video className="h-4 w-4" />
+                        <span>Медиафайлы ({defect.media.length})</span>
+                      </h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          setSelectedDefect(defect);
+                          setIsAddMediaOpen(true);
+                        }}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Добавить
+                      </Button>
                     </div>
-                    <div>
-                      <span className="block">Дата устранения:</span>
-                      <span>{formatDate(defect.resolvedDate || '')}</span>
+                    <SiteMediaGallery 
+                      media={defect.media}
+                      onDelete={handleDeleteMedia}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center mb-4">
+                    <p className="text-sm text-muted-foreground">Нет прикрепленных медиафайлов</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setSelectedDefect(defect);
+                        setIsAddMediaOpen(true);
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Добавить медиа
+                    </Button>
+                  </div>
+                )}
+                
+                {defect.status === 'resolved' && defect.resolution && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <h4 className="text-sm font-medium mb-1">Решение:</h4>
+                    <p className="text-sm">{defect.resolution}</p>
+                    
+                    <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4 mt-2">
+                      <div>
+                        <span className="block">Кем устранено:</span>
+                        <span>{getEmployeeName(defect.resolvedBy || '')}</span>
+                      </div>
+                      <div>
+                        <span className="block">Дата устранения:</span>
+                        <span>{formatDate(defect.resolvedDate || '')}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           ))}
         </div>
       ) : (
@@ -487,6 +637,30 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
             <Button variant="outline" onClick={() => setIsResolveDefectOpen(false)}>Отмена</Button>
             <Button onClick={handleResolveDefect}>Подтвердить</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Media Dialog */}
+      <Dialog open={isAddMediaOpen && !!selectedDefect} onOpenChange={(open) => setIsAddMediaOpen(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              <Video className="h-4 w-4 ml-1" />
+              <span>Добавить медиафайл</span>
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDefect && `Добавление медиафайла к неисправности: ${selectedDefect.title}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedDefect && (
+            <SiteMediaForm 
+              defectId={selectedDefect.id}
+              onSuccess={handleAddMedia}
+              onCancel={() => setIsAddMediaOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
