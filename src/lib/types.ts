@@ -216,3 +216,32 @@ export interface DiagramComment {
   content: string;
   createdAt: string;
 }
+
+export interface SiteIncident {
+  id: string;
+  title: string;
+  description: string;
+  siteId: string;
+  createdAt: string;
+  createdBy: string;
+  status: 'open' | 'in-progress' | 'resolved';
+  priority: 'low' | 'medium' | 'high';
+  resolution?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  media: SiteMedia[];
+}
+
+export interface UnionMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  authorId: string;
+  anonymous: boolean;
+  category: 'complaint' | 'suggestion' | 'question';
+  status: 'new' | 'in-review' | 'resolved';
+  votes: {
+    employeeId: string;
+    type: 'up' | 'down';
+  }[];
+}

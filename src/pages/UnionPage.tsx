@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertTriangle, User } from 'lucide-react';
+import { MessageSquare, AlertTriangle, User, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { employees } from '@/lib/data';
 
 interface UnionMessage {
@@ -19,6 +19,10 @@ interface UnionMessage {
   anonymous: boolean;
   category: 'complaint' | 'suggestion' | 'question';
   status: 'new' | 'in-review' | 'resolved';
+  votes: {
+    employeeId: string;
+    type: 'up' | 'down';
+  }[];
 }
 
 // Mock data for union messages
@@ -30,7 +34,11 @@ const mockMessages: UnionMessage[] = [
     authorId: 'e1',
     anonymous: true,
     category: 'complaint',
-    status: 'new'
+    status: 'new',
+    votes: [
+      { employeeId: 'e2', type: 'up' },
+      { employeeId: 'e3', type: 'up' }
+    ]
   },
   {
     id: 'msg-002',
@@ -39,7 +47,11 @@ const mockMessages: UnionMessage[] = [
     authorId: 'e3',
     anonymous: true,
     category: 'suggestion',
-    status: 'in-review'
+    status: 'in-review',
+    votes: [
+      { employeeId: 'e1', type: 'up' },
+      { employeeId: 'e4', type: 'down' }
+    ]
   },
   {
     id: 'msg-003',
@@ -48,7 +60,8 @@ const mockMessages: UnionMessage[] = [
     authorId: 'e2',
     anonymous: false,
     category: 'question',
-    status: 'resolved'
+    status: 'resolved',
+    votes: []
   }
 ];
 
@@ -80,7 +93,8 @@ const UnionPage: React.FC = () => {
       authorId: 'e1', // Current user ID
       anonymous,
       category,
-      status: 'new'
+      status: 'new',
+      votes: []
     };
     
     setMessages([message, ...messages]);
@@ -103,6 +117,42 @@ const UnionPage: React.FC = () => {
         status === 'new' ? 'Новое' : 
         status === 'in-review' ? 'На рассмотрении' : 'Решено'
       }`,
+    });
+  };
+  
+  const handleVote = (id: string, voteType: 'up' | 'down') => {
+    const currentUserId = 'e1'; // Current user ID
+    
+    setMessages(messages.map(msg => {
+      if (msg.id !== id) return msg;
+      
+      // Check if user already voted
+      const existingVoteIndex = msg.votes.findIndex(vote => vote.employeeId === currentUserId);
+      
+      if (existingVoteIndex >= 0) {
+        // User already voted, update their vote
+        const existingVote = msg.votes[existingVoteIndex];
+        
+        if (existingVote.type === voteType) {
+          // User is trying to vote the same way, remove their vote
+          const newVotes = [...msg.votes];
+          newVotes.splice(existingVoteIndex, 1);
+          return { ...msg, votes: newVotes };
+        } else {
+          // User is changing their vote
+          const newVotes = [...msg.votes];
+          newVotes[existingVoteIndex] = { employeeId: currentUserId, type: voteType };
+          return { ...msg, votes: newVotes };
+        }
+      } else {
+        // User hasn't voted, add new vote
+        return { ...msg, votes: [...msg.votes, { employeeId: currentUserId, type: voteType }] };
+      }
+    }));
+    
+    toast({
+      title: voteType === 'up' ? "Голос отдан" : "Голос против принят",
+      description: "Ваш голос учтен",
     });
   };
   
@@ -154,6 +204,17 @@ const UnionPage: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+  
+  const getVotesCount = (votes: { employeeId: string; type: 'up' | 'down' }[]) => {
+    const upVotes = votes.filter(vote => vote.type === 'up').length;
+    const downVotes = votes.filter(vote => vote.type === 'down').length;
+    return { upVotes, downVotes };
+  };
+  
+  const hasUserVoted = (votes: { employeeId: string; type: 'up' | 'down' }[], voteType: 'up' | 'down') => {
+    const currentUserId = 'e1'; // Current user ID
+    return votes.some(vote => vote.employeeId === currentUserId && vote.type === voteType);
   };
   
   return (
@@ -261,66 +322,96 @@ const UnionPage: React.FC = () => {
             
             <div className="space-y-4">
               {filteredMessages.length > 0 ? (
-                filteredMessages.map((message) => (
-                  <div key={message.id} className="glass p-4 rounded-lg">
-                    <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-primary" />
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(message.createdAt)}
-                        </span>
-                        {getCategoryBadge(message.category)}
-                        {getStatusBadge(message.status)}
+                filteredMessages.map((message) => {
+                  const { upVotes, downVotes } = getVotesCount(message.votes);
+                  return (
+                    <div key={message.id} className="glass p-4 rounded-lg">
+                      <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <MessageSquare className="h-4 w-4 text-primary" />
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(message.createdAt)}
+                          </span>
+                          {getCategoryBadge(message.category)}
+                          {getStatusBadge(message.status)}
+                        </div>
+                        
+                        {isAdmin && (
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs text-muted-foreground">
+                              Автор: {message.anonymous ? `${getAuthorName(message.authorId)} (анонимно)` : getAuthorName(message.authorId)}
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={message.status === 'new'}
+                                onClick={() => updateMessageStatus(message.id, 'new')}
+                                className="h-7 text-xs px-2"
+                              >
+                                Новое
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={message.status === 'in-review'}
+                                onClick={() => updateMessageStatus(message.id, 'in-review')}
+                                className="h-7 text-xs px-2"
+                              >
+                                В работе
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={message.status === 'resolved'}
+                                onClick={() => updateMessageStatus(message.id, 'resolved')}
+                                className="h-7 text-xs px-2"
+                              >
+                                Решено
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
-                      {isAdmin && (
-                        <div className="flex items-center gap-2">
+                      <p className="text-sm mb-3">{message.content}</p>
+                      
+                      <div className="flex justify-between items-center">
+                        {!message.anonymous && (
                           <div className="text-xs text-muted-foreground">
-                            Автор: {message.anonymous ? `${getAuthorName(message.authorId)} (анонимно)` : getAuthorName(message.authorId)}
+                            Автор: {getAuthorName(message.authorId)}
                           </div>
-                          
-                          <div className="flex gap-2">
+                        )}
+                        
+                        <div className="flex items-center gap-4 ml-auto">
+                          <div className="flex items-center gap-1">
                             <Button
                               size="sm"
-                              variant="outline"
-                              disabled={message.status === 'new'}
-                              onClick={() => updateMessageStatus(message.id, 'new')}
-                              className="h-7 text-xs px-2"
-                            >
-                              Новое
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={message.status === 'in-review'}
-                              onClick={() => updateMessageStatus(message.id, 'in-review')}
-                              className="h-7 text-xs px-2"
-                            >
-                              В работе
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
+                              variant="ghost"
+                              className={`px-2 py-1 ${hasUserVoted(message.votes, 'up') ? 'text-green-600' : ''}`}
+                              onClick={() => handleVote(message.id, 'up')}
                               disabled={message.status === 'resolved'}
-                              onClick={() => updateMessageStatus(message.id, 'resolved')}
-                              className="h-7 text-xs px-2"
                             >
-                              Решено
+                              <ThumbsUp className="h-4 w-4 mr-1" />
+                              <span>{upVotes}</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className={`px-2 py-1 ${hasUserVoted(message.votes, 'down') ? 'text-red-600' : ''}`}
+                              onClick={() => handleVote(message.id, 'down')}
+                              disabled={message.status === 'resolved'}
+                            >
+                              <ThumbsDown className="h-4 w-4 mr-1" />
+                              <span>{downVotes}</span>
                             </Button>
                           </div>
                         </div>
-                      )}
-                    </div>
-                    
-                    <p className="text-sm mb-1">{message.content}</p>
-                    
-                    {!message.anonymous && (
-                      <div className="text-xs text-muted-foreground mt-2">
-                        Автор: {getAuthorName(message.authorId)}
                       </div>
-                    )}
-                  </div>
-                ))
+                    </div>
+                  );
+                })
               ) : (
                 <div className="glass rounded-xl p-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />

@@ -16,6 +16,8 @@ import SitesPage from "./pages/SitesPage";
 import AccountingPage from "./pages/AccountingPage";
 import UnionPage from "./pages/UnionPage";
 import WiringDiagramsPage from "./pages/WiringDiagramsPage";
+import SiteIncidentsPage from "./pages/SiteIncidentsPage";
+import DesiredToolsPage from "./pages/DesiredToolsPage";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 
@@ -38,10 +40,12 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/tools" element={<ToolsPage />} />
                     <Route path="/toolbox" element={<ToolboxPage />} />
+                    <Route path="/desired-tools" element={<DesiredToolsPage />} />
                     <Route path="/library" element={<LibraryPage />} />
                     <Route path="/employees" element={<EmployeesPage />} />
                     <Route path="/crews" element={<CrewsPage />} />
                     <Route path="/sites" element={<SitesPage />} />
+                    <Route path="/site-incidents" element={<SiteIncidentsPage />} />
                     <Route path="/accounting" element={<AccountingPage />} />
                     <Route path="/union" element={<UnionPage />} />
                     <Route path="/wiring-diagrams" element={<WiringDiagramsPage />} />
