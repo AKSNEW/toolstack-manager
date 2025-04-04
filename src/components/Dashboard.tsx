@@ -1,11 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { dashboardStats, tools, employees, getUpcomingBirthdays } from '@/lib/data';
-import { Package, Users, Clock, AlertTriangle, Check } from 'lucide-react';
+import { Package, Users, Clock, AlertTriangle, Check, Gift, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BirthdayCard from './BirthdayCard';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Dashboard: React.FC = () => {
+  const [isBirthdayOpen, setIsBirthdayOpen] = useState(false);
+
   // Get most recent tool activities
   const recentActivity = [...tools]
     .filter(tool => tool.lastCheckedOut)
@@ -73,8 +80,28 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Дни рождения (перемещены вверх) */}
-      <BirthdayCard employees={upcomingBirthdays} />
+      {/* Дни рождения как выпадающий список */}
+      <div className="glass rounded-xl overflow-hidden">
+        <DropdownMenu open={isBirthdayOpen} onOpenChange={setIsBirthdayOpen}>
+          <DropdownMenuTrigger asChild>
+            <div className="px-6 py-5 border-b border-border flex items-center justify-between cursor-pointer hover:bg-accent/10 transition-colors">
+              <div>
+                <h2 className="text-lg font-semibold">Дни рождения</h2>
+                <p className="text-sm text-muted-foreground">Ближайшие праздники</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
+                  <Gift className="h-5 w-5" />
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform ${isBirthdayOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[500px] p-0 bg-popover">
+            <BirthdayCard employees={upcomingBirthdays} />
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat, index) => (
