@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { employees, Employee, tools, Tool, crews, Crew } from '@/lib/data';
 import EmployeeCard from '@/components/EmployeeCard';
@@ -102,7 +101,18 @@ const EmployeesPage = () => {
     setIsDeleteEmployeeDialogOpen(true);
   };
 
-  const handleDeleteEmployee = () => {
+  const handleUpdateEmployee = (updatedEmployee: Employee) => {
+    setEmployeesList(prevList => 
+      prevList.map(employee => 
+        employee.id === updatedEmployee.id 
+          ? updatedEmployee
+          : employee
+      )
+    );
+  };
+
+  const handleDeleteEmployee = (id: string) => {
+    const employeeToDelete = employeesList.find(e => e.id === id);
     if (!employeeToDelete) return;
 
     // Check if employee is part of any crew
@@ -126,18 +136,21 @@ const EmployeesPage = () => {
       });
     } else {
       setEmployeesList(prevList => 
-        prevList.filter(employee => employee.id !== employeeToDelete.id)
+        prevList.filter(employee => employee.id !== id)
       );
       
       toast({
         title: "Сотрудник удален",
         description: `${employeeToDelete.name} был успешно удален из системы`
       });
+      
+      // Close dialogs if open
+      if (selectedEmployee && selectedEmployee.id === id) {
+        setSelectedEmployee(null);
+      }
+      setIsDeleteEmployeeDialogOpen(false);
+      setEmployeeToDelete(null);
     }
-    
-    setIsDeleteEmployeeDialogOpen(false);
-    setEmployeeToDelete(null);
-    setSelectedEmployee(null);
   };
 
   // Get tool details by ID
@@ -219,6 +232,8 @@ const EmployeesPage = () => {
                 key={employee.id} 
                 employee={employee} 
                 onClick={handleEmployeeClick}
+                onUpdate={handleUpdateEmployee}
+                onDelete={handleDeleteEmployee}
               />
             ))}
           </div>
