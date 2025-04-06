@@ -1,4 +1,3 @@
-
 // Type definitions for the application
 
 export interface Tool {
@@ -55,6 +54,9 @@ export interface Employee {
     returnDate?: string;
   }[];
   clothingSize?: ClothingSize;
+  whatsapp?: string;
+  telegram?: string;
+  user_id?: string;
 }
 
 export interface SubCrew {
