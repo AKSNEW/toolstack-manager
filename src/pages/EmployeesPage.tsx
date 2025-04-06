@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Employee, Tool } from '@/lib/types';
 import { tools } from '@/lib/data';
@@ -67,6 +68,23 @@ const EmployeesPage = () => {
     };
 
     fetchEmployees();
+
+    // Set up real-time subscription for employee changes
+    const channel = supabase
+      .channel('employee-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'employees'
+      }, () => {
+        // Refresh the employee list when changes occur
+        fetchEmployees();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const departments = [...new Set(employeesList.map(emp => emp.department).filter(Boolean))];
