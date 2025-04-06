@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Employee } from '@/lib/types';
+import { Employee, Tool } from '@/lib/types';
+import { tools } from '@/lib/data';
 import EmployeeCard from '@/components/EmployeeCard';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Search, Users, X, Package, Calendar, Edit, Trash2 } from 'lucide-react';
@@ -26,7 +27,6 @@ const EmployeesPage = () => {
     const fetchEmployees = async () => {
       setIsLoading(true);
       try {
-        // Try to fetch from Supabase first
         const { data, error } = await supabase
           .from('employees')
           .select('*');
@@ -35,9 +35,7 @@ const EmployeesPage = () => {
           throw error;
         }
 
-        // If successful, map the data to our Employee type
         if (data && data.length > 0) {
-          // Map the data from Supabase to match the Employee interface
           const mappedEmployees: Employee[] = data.map(emp => ({
             id: emp.id,
             name: emp.name || 'Новый сотрудник',
@@ -54,14 +52,12 @@ const EmployeesPage = () => {
           }));
           setEmployeesList(mappedEmployees);
         } else {
-          // Fallback to dummy data if no data in Supabase
           import('@/lib/data/employees').then(module => {
             setEmployeesList(module.employees);
           });
         }
       } catch (error) {
         console.error('Error fetching employees:', error);
-        // Fallback to dummy data on error
         import('@/lib/data/employees').then(module => {
           setEmployeesList(module.employees);
         });
@@ -109,7 +105,6 @@ const EmployeesPage = () => {
 
   const handleEditEmployee = async (id: string, updatedEmployee: Omit<Employee, 'id' | 'activeRentals' | 'rentalHistory'>) => {
     try {
-      // Update in Supabase
       const { error } = await supabase
         .from('employees')
         .update({
@@ -125,7 +120,6 @@ const EmployeesPage = () => {
 
       if (error) throw error;
 
-      // Update local state
       setEmployeesList(prevList => 
         prevList.map(employee => 
           employee.id === id 
@@ -160,7 +154,6 @@ const EmployeesPage = () => {
 
   const handleUpdateEmployee = async (updatedEmployee: Employee) => {
     try {
-      // Update in Supabase
       const { error } = await supabase
         .from('employees')
         .update({
@@ -176,7 +169,6 @@ const EmployeesPage = () => {
 
       if (error) throw error;
 
-      // Update local state
       setEmployeesList(prevList => 
         prevList.map(employee => 
           employee.id === updatedEmployee.id 
@@ -202,7 +194,6 @@ const EmployeesPage = () => {
     const employeeToDelete = employeesList.find(e => e.id === id);
     if (!employeeToDelete) return;
 
-    // Check if employee is linked to a user account
     if (employeeToDelete.user_id) {
       toast({
         title: "Невозможно удалить",
@@ -214,8 +205,7 @@ const EmployeesPage = () => {
       return;
     }
 
-    // Additional checks
-    const isInCrew = false; // This would be a real check in a production environment
+    const isInCrew = false;
     
     if (isInCrew) {
       toast({
@@ -231,7 +221,6 @@ const EmployeesPage = () => {
       });
     } else {
       try {
-        // Delete from Supabase
         const { error } = await supabase
           .from('employees')
           .delete()
@@ -239,7 +228,6 @@ const EmployeesPage = () => {
 
         if (error) throw error;
 
-        // Update local state
         setEmployeesList(prevList => 
           prevList.filter(employee => employee.id !== id)
         );
