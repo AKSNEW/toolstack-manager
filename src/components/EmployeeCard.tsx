@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Employee } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,9 +19,10 @@ interface EmployeeCardProps {
   employee: Employee;
   onUpdate: (employee: Employee) => void;
   onDelete: (id: string) => void;
+  onClick?: (employee: Employee) => void;
 }
 
-const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onUpdate, onDelete }) => {
+const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onUpdate, onDelete, onClick }) => {
   const { toast } = useToast();
   const [isClothingSizeOpen, setIsClothingSizeOpen] = useState(false);
 
@@ -41,7 +43,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onUpdate, onDelet
   };
 
   return (
-    <Card className="glass">
+    <Card className="glass" onClick={() => onClick && onClick(employee)}>
       <CardHeader>
         <div className="flex items-center">
           <Avatar className="mr-4">
