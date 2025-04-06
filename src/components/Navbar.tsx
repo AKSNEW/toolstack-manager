@@ -17,7 +17,9 @@ import {
   FileCode,
   MessageSquare,
   LogOut,
-  User
+  User,
+  UserCircle,
+  Settings
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/context/AuthContext";
@@ -218,6 +220,13 @@ const Navbar = () => {
                   {user.email}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex w-full cursor-pointer">
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    Профиль
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Выйти
@@ -279,6 +288,14 @@ const Navbar = () => {
             {user && (
               <>
                 <div className="h-px bg-border my-2" />
+                <Link
+                  to="/profile"
+                  className="flex w-full items-center rounded-md px-3 py-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  Профиль
+                </Link>
                 <button
                   className="flex w-full items-center rounded-md px-3 py-2 text-muted-foreground hover:text-foreground"
                   onClick={() => {

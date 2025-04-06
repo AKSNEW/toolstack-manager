@@ -9,6 +9,7 @@ import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
+import ProfilePage from "./pages/ProfilePage";
 import ToolsPage from "./pages/ToolsPage";
 import ToolboxPage from "./pages/ToolboxPage";
 import LibraryPage from "./pages/LibraryPage";
@@ -53,6 +54,7 @@ const App = () => {
                     <Routes>
                       <Route path="/auth" element={<AuthPage />} />
                       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                       <Route path="/tools" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
                       <Route path="/toolbox" element={<ProtectedRoute><ToolboxPage /></ProtectedRoute>} />
                       <Route path="/desired-tools" element={<ProtectedRoute><DesiredToolsPage /></ProtectedRoute>} />
