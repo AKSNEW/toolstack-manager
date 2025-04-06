@@ -9,24 +9,72 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      employees: {
+        Row: {
+          avatar: string
+          created_at: string | null
+          department: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          position: string
+          telegram: string | null
+          user_id: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          avatar: string
+          created_at?: string | null
+          department: string
+          email: string
+          id?: string
+          name: string
+          phone: string
+          position: string
+          telegram?: string | null
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          avatar?: string
+          created_at?: string | null
+          department?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          position?: string
+          telegram?: string | null
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           id: string
+          telegram: string | null
           updated_at: string | null
           username: string | null
+          whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
           id: string
+          telegram?: string | null
           updated_at?: string | null
           username?: string | null
+          whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
           id?: string
+          telegram?: string | null
           updated_at?: string | null
           username?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -35,7 +83,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      find_or_create_employee: {
+        Args: {
+          user_id: string
+          user_email: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

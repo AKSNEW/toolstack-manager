@@ -1,28 +1,76 @@
-import React, { useState } from 'react';
-import { employees, Employee, tools, Tool, crews, Crew } from '@/lib/data';
+
+import React, { useState, useEffect } from 'react';
+import { Employee, tools, Tool, crews, Crew } from '@/lib/data';
 import EmployeeCard from '@/components/EmployeeCard';
 import TransitionWrapper from '@/components/TransitionWrapper';
-import { Search, Users, X, Package, Calendar, Plus, UserPlus, Edit, Trash2 } from 'lucide-react';
+import { Search, Users, X, Package, Calendar, Edit, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
-import AddEmployeeForm from '@/components/AddEmployeeForm';
 import EditEmployeeForm from '@/components/EditEmployeeForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const EmployeesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
   const [isEditEmployeeDialogOpen, setIsEditEmployeeDialogOpen] = useState(false);
   const [isDeleteEmployeeDialogOpen, setIsDeleteEmployeeDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
-  const [employeesList, setEmployeesList] = useState<Employee[]>(employees);
+  const [employeesList, setEmployeesList] = useState<Employee[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const departments = [...new Set(employeesList.map(emp => emp.department))];
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setIsLoading(true);
+      try {
+        // Try to fetch from Supabase first
+        const { data, error } = await supabase
+          .from('employees')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+
+        // If successful, map the data to our Employee type
+        if (data && data.length > 0) {
+          const mappedEmployees = data.map(emp => ({
+            id: emp.id,
+            name: emp.name || 'Новый сотрудник',
+            position: emp.position || '',
+            department: emp.department || '',
+            email: emp.email,
+            phone: emp.phone || '',
+            avatar: emp.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+            activeRentals: [],
+            rentalHistory: []
+          }));
+          setEmployeesList(mappedEmployees);
+        } else {
+          // Fallback to dummy data if no data in Supabase
+          import('@/lib/data/employees').then(module => {
+            setEmployeesList(module.employees);
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+        // Fallback to dummy data on error
+        import('@/lib/data/employees').then(module => {
+          setEmployeesList(module.employees);
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  const departments = [...new Set(employeesList.map(emp => emp.department).filter(Boolean))];
   
   const filteredEmployees = employeesList.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,26 +93,6 @@ const EmployeesPage = () => {
   const clearFilters = () => {
     setDepartmentFilter(null);
     setSearchTerm('');
-  };
-
-  const openAddEmployeeDialog = () => {
-    setIsAddEmployeeDialogOpen(true);
-  };
-
-  const closeAddEmployeeDialog = () => {
-    setIsAddEmployeeDialogOpen(false);
-  };
-
-  const handleAddEmployee = (newEmployee: Omit<Employee, 'id' | 'activeRentals' | 'rentalHistory'>) => {
-    const employee: Employee = {
-      ...newEmployee,
-      id: `e${employeesList.length + 1}`,
-      activeRentals: [],
-      rentalHistory: [],
-    };
-    
-    setEmployeesList(prev => [...prev, employee]);
-    closeAddEmployeeDialog();
   };
 
   const openEditEmployeeDialog = (employee: Employee) => {
@@ -158,16 +186,9 @@ const EmployeesPage = () => {
           <div>
             <h1 className="text-3xl font-bold">Сотрудники</h1>
             <p className="text-muted-foreground mt-2">
-              Управление профилями сотрудников компании
+              Список сотрудников компании
             </p>
           </div>
-          <Button 
-            onClick={openAddEmployeeDialog} 
-            className="flex items-center gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>Добавить сотрудника</span>
-          </Button>
         </div>
         
         <div className="glass rounded-xl mb-8 p-4">
@@ -216,7 +237,12 @@ const EmployeesPage = () => {
           </div>
         </div>
         
-        {filteredEmployees.length > 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <span className="ml-2">Загрузка сотрудников...</span>
+          </div>
+        ) : filteredEmployees.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEmployees.map(employee => (
               <EmployeeCard 
@@ -387,21 +413,6 @@ const EmployeesPage = () => {
               </div>
             </DialogContent>
           )}
-        </Dialog>
-
-        <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Добавить нового сотрудника</DialogTitle>
-              <DialogDescription>Заполните форму для добавления нового сотрудника</DialogDescription>
-            </DialogHeader>
-            
-            <AddEmployeeForm 
-              onAddEmployee={handleAddEmployee}
-              onCancel={closeAddEmployeeDialog}
-              departments={departments}
-            />
-          </DialogContent>
         </Dialog>
 
         <Dialog open={isEditEmployeeDialogOpen} onOpenChange={setIsEditEmployeeDialogOpen}>
