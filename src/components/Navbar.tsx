@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -15,14 +15,18 @@ import {
   BookOpen,
   ChevronDown,
   FileCode,
-  MessageSquare
+  MessageSquare,
+  LogOut,
+  User
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 interface NavItem {
@@ -102,7 +106,9 @@ const navItems: NavItem[] = [
 const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
 
   const isActiveRoute = (item: NavItem): boolean => {
     if (item.href === location.pathname) return true;
@@ -112,9 +118,19 @@ const Navbar = () => {
     return false;
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  // Don't show navigation if not authenticated
+  if (location.pathname === '/auth') {
+    return null;
+  }
+
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-full items-center">
+      <div className="container flex h-14 max-w-full items-center justify-between">
         <div className="mr-4 flex">
           <Link to="/" className="flex items-center mr-6 space-x-2">
             <span className="hidden font-bold sm:inline-block">
@@ -186,6 +202,30 @@ const Navbar = () => {
             </div>
           )}
         </div>
+
+        {user && (
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden md:inline">{user.email}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled className="font-medium">
+                  <User className="mr-2 h-4 w-4" />
+                  {user.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Выйти
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
 
       {/* Mobile menu */}
@@ -235,6 +275,22 @@ const Navbar = () => {
                 </Link>
               )
             ))}
+            
+            {user && (
+              <>
+                <div className="h-px bg-border my-2" />
+                <button
+                  className="flex w-full items-center rounded-md px-3 py-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    handleSignOut();
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Выйти
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
