@@ -22,17 +22,13 @@ const EmployeesPage = () => {
   const [employeesList, setEmployeesList] = useState<Employee[]>(employees);
   const { toast } = useToast();
 
-  // Get unique departments
   const departments = [...new Set(employeesList.map(emp => emp.department))];
   
-  // Filter employees based on search and filters
   const filteredEmployees = employeesList.filter(employee => {
-    // Search term filter
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Department filter
     const matchesDepartment = departmentFilter ? employee.department === departmentFilter : true;
     
     return matchesSearch && matchesDepartment;
@@ -115,7 +111,6 @@ const EmployeesPage = () => {
     const employeeToDelete = employeesList.find(e => e.id === id);
     if (!employeeToDelete) return;
 
-    // Check if employee is part of any crew
     const isInCrew = crews.some(crew => 
       crew.foreman === employeeToDelete.id || 
       crew.supervisor === employeeToDelete.id || 
@@ -144,7 +139,6 @@ const EmployeesPage = () => {
         description: `${employeeToDelete.name} был успешно удален из системы`
       });
       
-      // Close dialogs if open
       if (selectedEmployee && selectedEmployee.id === id) {
         setSelectedEmployee(null);
       }
@@ -153,7 +147,6 @@ const EmployeesPage = () => {
     }
   };
 
-  // Get tool details by ID
   const getToolById = (id: string): Tool | undefined => {
     return tools.find(tool => tool.id === id);
   };
@@ -177,7 +170,6 @@ const EmployeesPage = () => {
           </Button>
         </div>
         
-        {/* Search and filters */}
         <div className="glass rounded-xl mb-8 p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
@@ -224,7 +216,6 @@ const EmployeesPage = () => {
           </div>
         </div>
         
-        {/* Employees grid */}
         {filteredEmployees.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEmployees.map(employee => (
@@ -253,7 +244,6 @@ const EmployeesPage = () => {
           </div>
         )}
         
-        {/* Employee details dialog */}
         <Dialog open={!!selectedEmployee && !isEditEmployeeDialogOpen} onOpenChange={() => closeDialog()}>
           {selectedEmployee && (
             <DialogContent className="sm:max-w-[650px]">
@@ -285,7 +275,6 @@ const EmployeesPage = () => {
                   </div>
                 </div>
                 
-                {/* Active rentals */}
                 <div>
                   <h3 className="text-lg font-medium mb-3">
                     Активные заказы
@@ -321,7 +310,6 @@ const EmployeesPage = () => {
                   )}
                 </div>
                 
-                {/* Rental history */}
                 {selectedEmployee.rentalHistory.length > 0 && (
                   <div>
                     <h3 className="text-lg font-medium mb-3">
@@ -401,7 +389,6 @@ const EmployeesPage = () => {
           )}
         </Dialog>
 
-        {/* Add Employee Dialog */}
         <Dialog open={isAddEmployeeDialogOpen} onOpenChange={setIsAddEmployeeDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -417,7 +404,6 @@ const EmployeesPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Edit Employee Dialog */}
         <Dialog open={isEditEmployeeDialogOpen} onOpenChange={setIsEditEmployeeDialogOpen}>
           {selectedEmployee && (
             <DialogContent className="sm:max-w-[600px]">
@@ -436,7 +422,6 @@ const EmployeesPage = () => {
           )}
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteEmployeeDialogOpen} onOpenChange={setIsDeleteEmployeeDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -449,7 +434,12 @@ const EmployeesPage = () => {
               <AlertDialogCancel>Отмена</AlertDialogCancel>
               <AlertDialogAction 
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={handleDeleteEmployee}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (employeeToDelete) {
+                    handleDeleteEmployee(employeeToDelete.id);
+                  }
+                }}
               >
                 Удалить
               </AlertDialogAction>
