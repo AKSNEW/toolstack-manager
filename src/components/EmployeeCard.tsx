@@ -4,7 +4,7 @@ import { Employee } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, User, BadgeCheck, Shirt } from 'lucide-react';
+import { Mail, Phone, User, BadgeCheck, Shirt, MessageCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +33,8 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onUpdate, onDelet
       Department: ${employee.department}
       Email: ${employee.email}
       Phone: ${employee.phone}
+      ${employee.whatsapp ? `WhatsApp: ${employee.whatsapp}` : ''}
+      ${employee.telegram ? `Telegram: ${employee.telegram}` : ''}
     `;
 
     navigator.clipboard.writeText(employeeInfo);
@@ -70,6 +72,12 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onUpdate, onDelet
             <User className="h-4 w-4 mr-2" />
             <span>{employee.department}</span>
           </div>
+          {employee.telegram && (
+            <div className="flex items-center">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              <span>{employee.telegram}</span>
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">
@@ -92,7 +100,10 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onUpdate, onDelet
               <Edit className="h-4 w-4 mr-2" />
               Редактировать
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(employee.id)}>
+            <DropdownMenuItem 
+              onClick={() => onDelete(employee.id)} 
+              disabled={!!employee.user_id}
+            >
               <Trash className="h-4 w-4 mr-2" />
               Удалить
             </DropdownMenuItem>

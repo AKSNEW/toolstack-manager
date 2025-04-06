@@ -36,6 +36,8 @@ const employeeSchema = z.object({
   department: z.string().min(2, { message: "Отдел обязателен" }),
   phone: z.string().min(5, { message: "Телефон обязателен" }),
   avatar: z.string().url({ message: "Введите корректный URL изображения" }).optional(),
+  whatsapp: z.string().optional(),
+  telegram: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -68,6 +70,8 @@ const ProfilePage = () => {
       department: "",
       phone: "",
       avatar: "",
+      whatsapp: "",
+      telegram: "",
     },
   });
 
@@ -126,6 +130,8 @@ const ProfilePage = () => {
             department: data.department || "",
             phone: data.phone || "",
             avatar: data.avatar || "",
+            whatsapp: data.whatsapp || "",
+            telegram: data.telegram || "",
           });
         }
       } catch (error: any) {
@@ -143,17 +149,15 @@ const ProfilePage = () => {
     getEmployee();
   }, [user, profileForm, employeeForm, toast]);
 
-  const onSubmitProfile = async (values: ProfileFormValues) => {
+  // Function to save profile field immediately after change
+  const saveProfileField = async (field: keyof ProfileFormValues, value: any) => {
     if (!user) return;
-
+    
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          username: values.username,
-          avatar_url: values.avatar_url,
-          whatsapp: values.whatsapp,
-          telegram: values.telegram,
+          [field]: value,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -162,31 +166,38 @@ const ProfilePage = () => {
         throw error;
       }
 
+      // Update employee fields if they match (telegram, whatsapp)
+      if ((field === 'telegram' || field === 'whatsapp') && employee) {
+        await supabase
+          .from('employees')
+          .update({
+            [field]: value,
+          })
+          .eq('user_id', user.id);
+      }
+
       toast({
-        title: "Профиль обновлен",
-        description: "Ваш профиль был успешно обновлен",
+        title: "Поле обновлено",
+        description: "Ваши данные успешно сохранены",
       });
     } catch (error: any) {
       toast({
-        title: "Ошибка обновления профиля",
-        description: error.message || "Не удалось обновить профиль",
+        title: "Ошибка сохранения",
+        description: error.message || "Не удалось сохранить данные",
         variant: "destructive",
       });
     }
   };
 
-  const onSubmitEmployee = async (values: EmployeeFormValues) => {
-    if (!user) return;
-
+  // Function to save employee field immediately after change
+  const saveEmployeeField = async (field: keyof EmployeeFormValues, value: any) => {
+    if (!user || !employee) return;
+    
     try {
       const { error } = await supabase
         .from('employees')
         .update({
-          name: values.name,
-          position: values.position,
-          department: values.department,
-          phone: values.phone,
-          avatar: values.avatar || profile?.avatar_url || "",
+          [field]: value,
         })
         .eq('user_id', user.id);
 
@@ -194,14 +205,25 @@ const ProfilePage = () => {
         throw error;
       }
 
+      // Update profile fields if they match (telegram, whatsapp)
+      if ((field === 'telegram' || field === 'whatsapp') && profile) {
+        await supabase
+          .from('profiles')
+          .update({
+            [field]: value,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+      }
+
       toast({
-        title: "Данные сотрудника обновлены",
-        description: "Ваши данные сотрудника были успешно обновлены",
+        title: "Поле обновлено",
+        description: "Ваши данные успешно сохранены",
       });
     } catch (error: any) {
       toast({
-        title: "Ошибка обновления данных",
-        description: error.message || "Не удалось обновить данные сотрудника",
+        title: "Ошибка сохранения",
+        description: error.message || "Не удалось сохранить данные",
         variant: "destructive",
       });
     }
@@ -257,7 +279,7 @@ const ProfilePage = () => {
 
                   <div className="flex-1">
                     <Form {...profileForm}>
-                      <form onSubmit={profileForm.handleSubmit(onSubmitProfile)} className="space-y-4">
+                      <div className="space-y-4">
                         <FormField
                           control={profileForm.control}
                           name="username"
@@ -265,7 +287,14 @@ const ProfilePage = () => {
                             <FormItem>
                               <FormLabel>Имя пользователя</FormLabel>
                               <FormControl>
-                                <Input placeholder="Введите имя пользователя" {...field} />
+                                <Input 
+                                  placeholder="Введите имя пользователя" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    saveProfileField('username', e.target.value);
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -278,7 +307,14 @@ const ProfilePage = () => {
                             <FormItem>
                               <FormLabel>URL аватара</FormLabel>
                               <FormControl>
-                                <Input placeholder="https://example.com/avatar.jpg" {...field} />
+                                <Input 
+                                  placeholder="https://example.com/avatar.jpg" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    saveProfileField('avatar_url', e.target.value);
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -293,7 +329,15 @@ const ProfilePage = () => {
                               <FormControl>
                                 <div className="relative">
                                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input className="pl-10" placeholder="+7 (123) 456-7890" {...field} />
+                                  <Input 
+                                    className="pl-10" 
+                                    placeholder="+7 (123) 456-7890" 
+                                    {...field} 
+                                    onChange={(e) => {
+                                      field.onChange(e);
+                                      saveProfileField('whatsapp', e.target.value);
+                                    }}
+                                  />
                                 </div>
                               </FormControl>
                               <FormMessage />
@@ -309,17 +353,22 @@ const ProfilePage = () => {
                               <FormControl>
                                 <div className="relative">
                                   <MessageCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input className="pl-10" placeholder="@username" {...field} />
+                                  <Input 
+                                    className="pl-10" 
+                                    placeholder="@username" 
+                                    {...field} 
+                                    onChange={(e) => {
+                                      field.onChange(e);
+                                      saveProfileField('telegram', e.target.value);
+                                    }}
+                                  />
                                 </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                          {profileForm.formState.isSubmitting ? "Сохранение..." : "Сохранить изменения"}
-                        </Button>
-                      </form>
+                      </div>
                     </Form>
                   </div>
                 </div>
@@ -341,7 +390,7 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <Form {...employeeForm}>
-                    <form onSubmit={employeeForm.handleSubmit(onSubmitEmployee)} className="space-y-4">
+                    <div className="space-y-4">
                       <FormField
                         control={employeeForm.control}
                         name="name"
@@ -349,7 +398,14 @@ const ProfilePage = () => {
                           <FormItem>
                             <FormLabel>ФИО</FormLabel>
                             <FormControl>
-                              <Input placeholder="Иванов Иван Иванович" {...field} />
+                              <Input 
+                                placeholder="Иванов Иван Иванович" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  saveEmployeeField('name', e.target.value);
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -362,7 +418,14 @@ const ProfilePage = () => {
                           <FormItem>
                             <FormLabel>Должность</FormLabel>
                             <FormControl>
-                              <Input placeholder="Старший инженер" {...field} />
+                              <Input 
+                                placeholder="Старший инженер" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  saveEmployeeField('position', e.target.value);
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -375,7 +438,14 @@ const ProfilePage = () => {
                           <FormItem>
                             <FormLabel>Отдел</FormLabel>
                             <FormControl>
-                              <Input placeholder="Электрический" {...field} />
+                              <Input 
+                                placeholder="Электрический" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  saveEmployeeField('department', e.target.value);
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -388,7 +458,14 @@ const ProfilePage = () => {
                           <FormItem>
                             <FormLabel>Телефон</FormLabel>
                             <FormControl>
-                              <Input placeholder="+7 (123) 456-7890" {...field} />
+                              <Input 
+                                placeholder="+7 (123) 456-7890" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  saveEmployeeField('phone', e.target.value);
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -401,16 +478,68 @@ const ProfilePage = () => {
                           <FormItem>
                             <FormLabel>URL аватара</FormLabel>
                             <FormControl>
-                              <Input placeholder="https://example.com/avatar.jpg" {...field} />
+                              <Input 
+                                placeholder="https://example.com/avatar.jpg" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  saveEmployeeField('avatar', e.target.value);
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" disabled={employeeForm.formState.isSubmitting}>
-                        {employeeForm.formState.isSubmitting ? "Сохранение..." : "Сохранить данные сотрудника"}
-                      </Button>
-                    </form>
+                      <FormField
+                        control={employeeForm.control}
+                        name="whatsapp"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>WhatsApp</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  className="pl-10" 
+                                  placeholder="+7 (123) 456-7890" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    saveEmployeeField('whatsapp', e.target.value);
+                                  }}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={employeeForm.control}
+                        name="telegram"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telegram</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <MessageCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  className="pl-10" 
+                                  placeholder="@username" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    saveEmployeeField('telegram', e.target.value);
+                                  }}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </Form>
                 )}
               </CardContent>

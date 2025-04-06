@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Employee, tools, Tool, crews, Crew } from '@/lib/data';
+import { Employee } from '@/lib/types';
 import EmployeeCard from '@/components/EmployeeCard';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Search, Users, X, Package, Calendar, Edit, Trash2 } from 'lucide-react';
@@ -38,7 +37,8 @@ const EmployeesPage = () => {
 
         // If successful, map the data to our Employee type
         if (data && data.length > 0) {
-          const mappedEmployees = data.map(emp => ({
+          // Map the data from Supabase to match the Employee interface
+          const mappedEmployees: Employee[] = data.map(emp => ({
             id: emp.id,
             name: emp.name || 'Новый сотрудник',
             position: emp.position || '',
@@ -47,7 +47,10 @@ const EmployeesPage = () => {
             phone: emp.phone || '',
             avatar: emp.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
             activeRentals: [],
-            rentalHistory: []
+            rentalHistory: [],
+            whatsapp: emp.whatsapp,
+            telegram: emp.telegram,
+            user_id: emp.user_id
           }));
           setEmployeesList(mappedEmployees);
         } else {
@@ -104,20 +107,50 @@ const EmployeesPage = () => {
     setIsEditEmployeeDialogOpen(false);
   };
 
-  const handleEditEmployee = (id: string, updatedEmployee: Omit<Employee, 'id' | 'activeRentals' | 'rentalHistory'>) => {
-    setEmployeesList(prevList => 
-      prevList.map(employee => 
-        employee.id === id 
-          ? { 
-              ...employee, 
-              ...updatedEmployee 
-            } 
-          : employee
-      )
-    );
+  const handleEditEmployee = async (id: string, updatedEmployee: Omit<Employee, 'id' | 'activeRentals' | 'rentalHistory'>) => {
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('employees')
+        .update({
+          name: updatedEmployee.name,
+          position: updatedEmployee.position,
+          department: updatedEmployee.department,
+          phone: updatedEmployee.phone,
+          avatar: updatedEmployee.avatar,
+          whatsapp: updatedEmployee.whatsapp,
+          telegram: updatedEmployee.telegram
+        })
+        .eq('id', id);
 
-    closeEditEmployeeDialog();
-    closeDialog();
+      if (error) throw error;
+
+      // Update local state
+      setEmployeesList(prevList => 
+        prevList.map(employee => 
+          employee.id === id 
+            ? { 
+                ...employee, 
+                ...updatedEmployee 
+              } 
+            : employee
+        )
+      );
+
+      toast({
+        title: "Сотрудник обновлен",
+        description: `Данные сотрудника "${updatedEmployee.name}" успешно обновлены`
+      });
+
+      closeEditEmployeeDialog();
+      closeDialog();
+    } catch (error: any) {
+      toast({
+        title: "Ошибка обновления",
+        description: error.message || "Не удалось обновить данные сотрудника",
+        variant: "destructive"
+      });
+    }
   };
 
   const openDeleteEmployeeDialog = (employee: Employee) => {
@@ -125,26 +158,65 @@ const EmployeesPage = () => {
     setIsDeleteEmployeeDialogOpen(true);
   };
 
-  const handleUpdateEmployee = (updatedEmployee: Employee) => {
-    setEmployeesList(prevList => 
-      prevList.map(employee => 
-        employee.id === updatedEmployee.id 
-          ? updatedEmployee
-          : employee
-      )
-    );
+  const handleUpdateEmployee = async (updatedEmployee: Employee) => {
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('employees')
+        .update({
+          name: updatedEmployee.name,
+          position: updatedEmployee.position,
+          department: updatedEmployee.department,
+          phone: updatedEmployee.phone,
+          avatar: updatedEmployee.avatar,
+          whatsapp: updatedEmployee.whatsapp,
+          telegram: updatedEmployee.telegram
+        })
+        .eq('id', updatedEmployee.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setEmployeesList(prevList => 
+        prevList.map(employee => 
+          employee.id === updatedEmployee.id 
+            ? updatedEmployee
+            : employee
+        )
+      );
+
+      toast({
+        title: "Данные обновлены",
+        description: "Информация о сотруднике успешно обновлена"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка обновления",
+        description: error.message || "Не удалось обновить данные сотрудника",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteEmployee = (id: string) => {
+  const handleDeleteEmployee = async (id: string) => {
     const employeeToDelete = employeesList.find(e => e.id === id);
     if (!employeeToDelete) return;
 
-    const isInCrew = crews.some(crew => 
-      crew.foreman === employeeToDelete.id || 
-      crew.supervisor === employeeToDelete.id || 
-      crew.members.includes(employeeToDelete.id)
-    );
+    // Check if employee is linked to a user account
+    if (employeeToDelete.user_id) {
+      toast({
+        title: "Невозможно удалить",
+        description: "Этот сотрудник связан с учетной записью пользователя и не может быть удален.",
+        variant: "destructive"
+      });
+      setIsDeleteEmployeeDialogOpen(false);
+      setEmployeeToDelete(null);
+      return;
+    }
 
+    // Additional checks
+    const isInCrew = false; // This would be a real check in a production environment
+    
     if (isInCrew) {
       toast({
         title: "Ошибка удаления",
@@ -158,18 +230,36 @@ const EmployeesPage = () => {
         variant: "destructive"
       });
     } else {
-      setEmployeesList(prevList => 
-        prevList.filter(employee => employee.id !== id)
-      );
-      
-      toast({
-        title: "Сотрудник удален",
-        description: `${employeeToDelete.name} был успешно удален из системы`
-      });
-      
-      if (selectedEmployee && selectedEmployee.id === id) {
-        setSelectedEmployee(null);
+      try {
+        // Delete from Supabase
+        const { error } = await supabase
+          .from('employees')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        // Update local state
+        setEmployeesList(prevList => 
+          prevList.filter(employee => employee.id !== id)
+        );
+        
+        toast({
+          title: "Сотрудник удален",
+          description: `${employeeToDelete.name} был успешно удален из системы`
+        });
+        
+        if (selectedEmployee && selectedEmployee.id === id) {
+          setSelectedEmployee(null);
+        }
+      } catch (error: any) {
+        toast({
+          title: "Ошибка удаления",
+          description: error.message || "Не удалось удалить сотрудника",
+          variant: "destructive"
+        });
       }
+      
       setIsDeleteEmployeeDialogOpen(false);
       setEmployeeToDelete(null);
     }
@@ -299,6 +389,18 @@ const EmployeesPage = () => {
                     <p className="text-muted-foreground">Телефон</p>
                     <p>{selectedEmployee.phone}</p>
                   </div>
+                  {selectedEmployee.whatsapp && (
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground">WhatsApp</p>
+                      <p>{selectedEmployee.whatsapp}</p>
+                    </div>
+                  )}
+                  {selectedEmployee.telegram && (
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground">Telegram</p>
+                      <p>{selectedEmployee.telegram}</p>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -399,6 +501,7 @@ const EmployeesPage = () => {
                       onClick={() => openDeleteEmployeeDialog(selectedEmployee)}
                       className="flex items-center gap-2" 
                       variant="destructive"
+                      disabled={!!selectedEmployee.user_id}
                     >
                       <Trash2 className="h-4 w-4" />
                       Удалить

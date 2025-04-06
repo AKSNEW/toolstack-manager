@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -7,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Employee } from '@/lib/data';
+import { Employee } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { IdCard } from 'lucide-react';
+import { IdCard, MessageCircle, Phone } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -31,6 +30,8 @@ const formSchema = z.object({
   avatar: z.string().url({
     message: 'Введите корректный URL изображения',
   }),
+  whatsapp: z.string().optional(),
+  telegram: z.string().optional(),
   // Optional driver license fields
   hasDriverLicense: z.boolean().optional(),
   driverLicenseNumber: z.string().optional(),
@@ -61,6 +62,8 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
       email: employee.email,
       phone: employee.phone,
       avatar: employee.avatar,
+      whatsapp: employee.whatsapp || '',
+      telegram: employee.telegram || '',
       hasDriverLicense: !!employee.driverLicense,
       driverLicenseNumber: employee.driverLicense?.number || '',
       driverLicenseCategory: employee.driverLicense?.category || '',
@@ -82,6 +85,9 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
         phone: values.phone,
         avatar: values.avatar,
         birthDate: employee.birthDate,
+        whatsapp: values.whatsapp,
+        telegram: values.telegram,
+        user_id: employee.user_id,
       };
 
       // Add driver license if provided
@@ -188,7 +194,44 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
                 <FormItem>
                   <FormLabel>Телефон</FormLabel>
                   <FormControl>
-                    <Input placeholder="+7 (123) 456-7890" {...field} />
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="+7 (123) 456-7890" className="pl-10" {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="whatsapp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>WhatsApp</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="+7 (123) 456-7890" className="pl-10" {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="telegram"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telegram</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <MessageCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="@username" className="pl-10" {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
