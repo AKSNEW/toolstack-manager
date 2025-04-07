@@ -155,6 +155,41 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
     }
   };
 
+  const handleUpdateSubCrew = async (id: string, updatedSubCrew: Partial<SubCrew>) => {
+    if (!selectedSubCrew) return;
+
+    try {
+      const updateData = adaptSubCrewToDB(updatedSubCrew);
+      
+      const { error } = await supabase
+        .from('subcrews')
+        .update(updateData)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      onUpdateSubCrew(selectedSubCrew.id, { members: updatedMembers });
+      
+      setSelectedSubCrew(prev => 
+        prev ? { ...prev, members: updatedMembers } : null
+      );
+      
+      const employee = getEmployeeById(employeeId);
+      
+      toast({
+        title: "Сотрудник добавлен",
+        description: `${employee?.name} добавлен в подбригаду "${selectedSubCrew.name}"`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка добавления сотрудника",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error adding employee to subcrew:", error);
+    }
+  };
+
   const removeEmployeeFromSubCrew = async (employeeId: string) => {
     if (!selectedSubCrew) return;
 
