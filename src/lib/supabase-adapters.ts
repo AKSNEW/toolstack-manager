@@ -45,19 +45,18 @@ export function adaptSubCrewFromDB(subCrew: SubCrewRow): SubCrew {
   };
 }
 
-// Convert app SubCrew type to database format - ensuring required fields are present
-export function adaptSubCrewToDB(subCrew: Omit<SubCrew, 'id'> | Partial<SubCrew>): SubCrewInsert | Partial<SubCrewRow> {
-  // For complete SubCrew objects without ID (new subcrew)
-  if ('name' in subCrew && 'foreman' in subCrew && 'specialization' in subCrew && 'members' in subCrew) {
-    return {
-      name: subCrew.name,
-      foreman: subCrew.foreman,
-      specialization: subCrew.specialization,
-      members: subCrew.members
-    };
-  }
-  
-  // For partial updates
+// Convert app SubCrew type to database format for new inserts - ensuring required fields are present
+export function adaptSubCrewForInsert(subCrew: Omit<SubCrew, 'id'>): SubCrewInsert {
+  return {
+    name: subCrew.name,
+    foreman: subCrew.foreman,
+    specialization: subCrew.specialization,
+    members: subCrew.members
+  };
+}
+
+// Convert app SubCrew type to database format for updates
+export function adaptSubCrewToDB(subCrew: Partial<SubCrew>): Partial<SubCrewRow> {
   const result: Partial<SubCrewRow> = {};
   
   if ('name' in subCrew) result.name = subCrew.name;

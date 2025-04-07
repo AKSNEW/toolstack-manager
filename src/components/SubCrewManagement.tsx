@@ -10,7 +10,7 @@ import { Label } from './ui/label';
 import { Select } from './ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { adaptSubCrewFromDB, adaptSubCrewToDB, adaptCrewToDB } from '@/lib/supabase-adapters';
+import { adaptSubCrewFromDB, adaptSubCrewToDB, adaptCrewToDB, adaptSubCrewForInsert } from '@/lib/supabase-adapters';
 
 interface SubCrewManagementProps {
   subCrews: SubCrew[];
@@ -70,7 +70,7 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
 
       const { data: newSubCrew, error } = await supabase
         .from('subcrews')
-        .insert(adaptSubCrewToDB(newSubCrewData))
+        .insert(adaptSubCrewForInsert(newSubCrewData))
         .select();
         
       if (error) throw error;
@@ -156,8 +156,6 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
   };
 
   const handleUpdateSubCrew = async (id: string, updatedSubCrew: Partial<SubCrew>) => {
-    if (!selectedSubCrew) return;
-
     try {
       const updateData = adaptSubCrewToDB(updatedSubCrew);
       
@@ -168,25 +166,19 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
         
       if (error) throw error;
       
-      onUpdateSubCrew(selectedSubCrew.id, { members: updatedMembers });
-      
-      setSelectedSubCrew(prev => 
-        prev ? { ...prev, members: updatedMembers } : null
-      );
-      
-      const employee = getEmployeeById(employeeId);
+      onUpdateSubCrew(id, updatedSubCrew);
       
       toast({
-        title: "Сотрудник добавлен",
-        description: `${employee?.name} добавлен в подбригаду "${selectedSubCrew.name}"`,
+        title: "Подбригада обновлена",
+        description: "Данные подбригады успешно обновлены",
       });
     } catch (error: any) {
       toast({
-        title: "Ошибка добавления сотрудника",
+        title: "Ошибка обновления подбригады",
         description: error.message,
         variant: "destructive",
       });
-      console.error("Error adding employee to subcrew:", error);
+      console.error("Error updating subcrew:", error);
     }
   };
 

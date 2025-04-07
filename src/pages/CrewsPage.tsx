@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Crew, Employee, Site, SubCrew } from '@/lib/data';
 import { employees, sites } from '@/lib/data';
@@ -14,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SubCrewManagement from '@/components/SubCrewManagement';
 import { supabase } from '@/integrations/supabase/client';
-import { adaptCrewFromDB, adaptCrewToDB, adaptSubCrewFromDB, adaptSubCrewToDB } from '@/lib/supabase-adapters';
+import { adaptCrewFromDB, adaptCrewToDB, adaptSubCrewFromDB, adaptSubCrewToDB, adaptSubCrewForInsert } from '@/lib/supabase-adapters';
 
 const CrewsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -368,12 +367,9 @@ const CrewsPage = () => {
     if (!selectedCrew) return;
 
     try {
-      // Use adapter to ensure all required fields are properly formatted
-      const insertData = adaptSubCrewToDB(newSubCrew);
-      
       const { data, error } = await supabase
         .from('subcrews')
-        .insert(insertData)
+        .insert(adaptSubCrewForInsert(newSubCrew))
         .select();
         
       if (error) throw error;
@@ -383,12 +379,9 @@ const CrewsPage = () => {
         
         const updatedSubcrews = [...selectedCrew.subCrews, subCrew.id];
         
-        // Use adapter for crew update
-        const updateData = adaptCrewToDB({ subCrews: updatedSubcrews });
-        
         const { error: updateError } = await supabase
           .from('crews')
-          .update(updateData)
+          .update(adaptCrewToDB({ subCrews: updatedSubcrews }))
           .eq('id', selectedCrew.id);
           
         if (updateError) throw updateError;
