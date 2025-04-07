@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SubCrew, Employee } from '@/lib/data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -10,6 +9,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select } from './ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubCrewManagementProps {
   subCrews: SubCrew[];
@@ -49,7 +49,7 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
     setNewSubCrewSpecialization('');
   };
 
-  const handleAddSubCrew = () => {
+  const handleAddSubCrew = async () => {
     if (!newSubCrewName || !newSubCrewForeman || !newSubCrewSpecialization) {
       toast({
         title: "Ошибка",
@@ -59,20 +59,51 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
       return;
     }
 
-    const newSubCrew: Omit<SubCrew, 'id'> = {
-      name: newSubCrewName,
-      foreman: newSubCrewForeman,
-      members: [newSubCrewForeman], // Initially, the foreman is the only member
-      specialization: newSubCrewSpecialization,
-    };
-
-    onAddSubCrew(newSubCrew);
-    closeAddDialog();
-
-    toast({
-      title: "Подбригада создана",
-      description: `Подбригада "${newSubCrewName}" успешно создана`,
-    });
+    try {
+      const { data: newSubCrew, error } = await supabase
+        .from('subcrews')
+        .insert({
+          name: newSubCrewName,
+          foreman: newSubCrewForeman,
+          members: [newSubCrewForeman],
+          specialization: newSubCrewSpecialization,
+        })
+        .select();
+        
+      if (error) throw error;
+      
+      if (newSubCrew && newSubCrew[0]) {
+        onAddSubCrew({
+          name: newSubCrewName,
+          foreman: newSubCrewForeman,
+          members: [newSubCrewForeman],
+          specialization: newSubCrewSpecialization,
+        });
+        
+        const { error: updateError } = await supabase
+          .from('crews')
+          .update({
+            subcrews: [...(subCrews.map(sc => sc.id)), newSubCrew[0].id]
+          })
+          .eq('id', crewId);
+          
+        if (updateError) throw updateError;
+        
+        closeAddDialog();
+      
+        toast({
+          title: "Подбригада создана",
+          description: `Подбригада "${newSubCrewName}" успешно создана`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Ошибка создания подбригады",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error creating subcrew:", error);
+    }
   };
 
   const openManageMembers = (subCrew: SubCrew) => {
@@ -88,33 +119,47 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
   const getAvailableMembersForSubCrew = () => {
     if (!selectedSubCrew) return [];
     
-    // Get all employees that are not in the current sub-crew
     return availableEmployees.filter(employee => !selectedSubCrew.members.includes(employee.id));
   };
 
-  const addEmployeeToSubCrew = (employeeId: string) => {
+  const addEmployeeToSubCrew = async (employeeId: string) => {
     if (!selectedSubCrew) return;
 
-    const updatedMembers = [...selectedSubCrew.members, employeeId];
-    
-    onUpdateSubCrew(selectedSubCrew.id, { members: updatedMembers });
-    
-    setSelectedSubCrew(prev => 
-      prev ? { ...prev, members: updatedMembers } : null
-    );
-    
-    const employee = getEmployeeById(employeeId);
-    
-    toast({
-      title: "Сотрудник добавлен",
-      description: `${employee?.name} добавлен в подбригаду "${selectedSubCrew.name}"`,
-    });
+    try {
+      const updatedMembers = [...selectedSubCrew.members, employeeId];
+      
+      const { error } = await supabase
+        .from('subcrews')
+        .update({ members: updatedMembers })
+        .eq('id', selectedSubCrew.id);
+        
+      if (error) throw error;
+      
+      onUpdateSubCrew(selectedSubCrew.id, { members: updatedMembers });
+      
+      setSelectedSubCrew(prev => 
+        prev ? { ...prev, members: updatedMembers } : null
+      );
+      
+      const employee = getEmployeeById(employeeId);
+      
+      toast({
+        title: "Сотрудник добавлен",
+        description: `${employee?.name} добавлен в подбригаду "${selectedSubCrew.name}"`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка добавления сотрудника",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error adding employee to subcrew:", error);
+    }
   };
 
-  const removeEmployeeFromSubCrew = (employeeId: string) => {
+  const removeEmployeeFromSubCrew = async (employeeId: string) => {
     if (!selectedSubCrew) return;
 
-    // Check if employee is foreman
     if (selectedSubCrew.foreman === employeeId) {
       toast({
         title: "Ошибка удаления",
@@ -124,20 +169,36 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
       return;
     }
 
-    const updatedMembers = selectedSubCrew.members.filter(id => id !== employeeId);
-    
-    onUpdateSubCrew(selectedSubCrew.id, { members: updatedMembers });
-    
-    setSelectedSubCrew(prev => 
-      prev ? { ...prev, members: updatedMembers } : null
-    );
-    
-    const employee = getEmployeeById(employeeId);
-    
-    toast({
-      title: "Сотрудник удален",
-      description: `${employee?.name} удален из подбригады "${selectedSubCrew.name}"`,
-    });
+    try {
+      const updatedMembers = selectedSubCrew.members.filter(id => id !== employeeId);
+      
+      const { error } = await supabase
+        .from('subcrews')
+        .update({ members: updatedMembers })
+        .eq('id', selectedSubCrew.id);
+        
+      if (error) throw error;
+      
+      onUpdateSubCrew(selectedSubCrew.id, { members: updatedMembers });
+      
+      setSelectedSubCrew(prev => 
+        prev ? { ...prev, members: updatedMembers } : null
+      );
+      
+      const employee = getEmployeeById(employeeId);
+      
+      toast({
+        title: "Сотрудник удален",
+        description: `${employee?.name} удален из подбригады "${selectedSubCrew.name}"`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка удаления сотрудника",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error removing employee from subcrew:", error);
+    }
   };
 
   return (
@@ -204,7 +265,6 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
         </div>
       )}
 
-      {/* Add Sub-Crew Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -260,7 +320,6 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Manage Sub-Crew Members Dialog */}
       <Dialog open={showManageMembers} onOpenChange={setShowManageMembers}>
         {selectedSubCrew && (
           <DialogContent className="sm:max-w-[700px]">

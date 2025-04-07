@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      crews: {
+        Row: {
+          created_at: string | null
+          foreman: string
+          id: string
+          members: string[]
+          name: string
+          subcrews: string[] | null
+          supervisor: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          foreman: string
+          id?: string
+          members?: string[]
+          name: string
+          subcrews?: string[] | null
+          supervisor: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          foreman?: string
+          id?: string
+          members?: string[]
+          name?: string
+          subcrews?: string[] | null
+          supervisor?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           avatar: string
@@ -75,6 +108,36 @@ export type Database = {
           updated_at?: string | null
           username?: string | null
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      subcrews: {
+        Row: {
+          created_at: string | null
+          foreman: string
+          id: string
+          members: string[]
+          name: string
+          specialization: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          foreman: string
+          id?: string
+          members?: string[]
+          name: string
+          specialization: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          foreman?: string
+          id?: string
+          members?: string[]
+          name?: string
+          specialization?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

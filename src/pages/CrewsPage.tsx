@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { crews, Crew, employees, Employee, sites, Site, subCrews, SubCrew } from '@/lib/data';
+import React, { useState, useEffect } from 'react';
+import { Crew, Employee, Site, SubCrew } from '@/lib/data';
+import { employees, sites } from '@/lib/data';
 import CrewCard from '@/components/CrewCard';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,18 +12,92 @@ import AddCrewForm from '@/components/AddCrewForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SubCrewManagement from '@/components/SubCrewManagement';
+import { supabase } from '@/integrations/supabase/client';
 
 const CrewsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [crewsList, setCrewsList] = useState<Crew[]>(crews);
-  const [subCrewsList, setSubCrewsList] = useState<SubCrew[]>(subCrews);
+  const [crewsList, setCrewsList] = useState<Crew[]>([]);
+  const [subCrewsList, setSubCrewsList] = useState<SubCrew[]>([]);
   const [selectedCrew, setSelectedCrew] = useState<Crew | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showManageMembers, setShowManageMembers] = useState(false);
   const [showSubCrews, setShowSubCrews] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchCrewsAndSubcrews = async () => {
+      setIsLoading(true);
+      try {
+        const { data: fetchedCrews, error: crewsError } = await supabase
+          .from('crews')
+          .select('*');
+          
+        if (crewsError) throw crewsError;
+        
+        const { data: fetchedSubcrews, error: subcrewsError } = await supabase
+          .from('subcrews')
+          .select('*');
+          
+        if (subcrewsError) throw subcrewsError;
+        
+        if (fetchedCrews && fetchedCrews.length > 0) {
+          setCrewsList(fetchedCrews);
+        } else {
+          import('@/lib/data').then(module => {
+            setCrewsList(module.crews);
+          });
+        }
+        
+        if (fetchedSubcrews && fetchedSubcrews.length > 0) {
+          setSubCrewsList(fetchedSubcrews);
+        } else {
+          import('@/lib/data').then(module => {
+            setSubCrewsList(module.subCrews);
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching crews and subcrews:', error);
+        import('@/lib/data').then(module => {
+          setCrewsList(module.crews);
+          setSubCrewsList(module.subCrews);
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCrewsAndSubcrews();
+    
+    const crewsChannel = supabase
+      .channel('crews-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'crews'
+      }, () => {
+        fetchCrewsAndSubcrews();
+      })
+      .subscribe();
+      
+    const subcrewsChannel = supabase
+      .channel('subcrews-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'subcrews'
+      }, () => {
+        fetchCrewsAndSubcrews();
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(crewsChannel);
+      supabase.removeChannel(subcrewsChannel);
+    };
+  }, []);
 
   const handleCrewClick = (crew: Crew) => {
     setSelectedCrew(crew);
@@ -45,25 +120,47 @@ const CrewsPage = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleEditCrew = (id: string, updatedCrew: Omit<Crew, 'id'>) => {
-    setCrewsList(prevList => 
-      prevList.map(crew => 
-        crew.id === id 
-          ? { 
-              ...crew, 
-              ...updatedCrew 
-            } 
-          : crew
-      )
-    );
+  const handleEditCrew = async (id: string, updatedCrew: Omit<Crew, 'id'>) => {
+    try {
+      const { error } = await supabase
+        .from('crews')
+        .update({
+          name: updatedCrew.name,
+          foreman: updatedCrew.foreman,
+          supervisor: updatedCrew.supervisor,
+          members: updatedCrew.members,
+          subcrews: updatedCrew.subcrews
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setCrewsList(prevList => 
+        prevList.map(crew => 
+          crew.id === id 
+            ? { 
+                ...crew, 
+                ...updatedCrew 
+              } 
+            : crew
+        )
+      );
 
-    setIsEditDialogOpen(false);
-    setSelectedCrew(null);
-    
-    toast({
-      title: "Бригада обновлена",
-      description: `Информация о бригаде "${updatedCrew.name}" успешно обновлена`
-    });
+      setIsEditDialogOpen(false);
+      setSelectedCrew(null);
+      
+      toast({
+        title: "Бригада обновлена",
+        description: `Информация о бригаде "${updatedCrew.name}" успешно обновлена`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка обновления",
+        description: error.message || "Не удалось обновить бригаду",
+        variant: "destructive"
+      });
+      console.error("Error updating crew:", error);
+    }
   };
 
   const openDeleteDialog = (crew: Crew) => {
@@ -71,7 +168,7 @@ const CrewsPage = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteCrew = () => {
+  const handleDeleteCrew = async () => {
     if (!selectedCrew) return;
 
     const assignedToSite = sites.some(site => site.crewId === selectedCrew.id);
@@ -86,21 +183,47 @@ const CrewsPage = () => {
       return;
     }
 
-    setSubCrewsList(prevSubCrews => 
-      prevSubCrews.filter(subCrew => !selectedCrew.subCrews.includes(subCrew.id))
-    );
+    try {
+      for (const subCrewId of selectedCrew.subcrews) {
+        const { error } = await supabase
+          .from('subcrews')
+          .delete()
+          .eq('id', subCrewId);
+          
+        if (error) throw error;
+      }
+      
+      const { error } = await supabase
+        .from('crews')
+        .delete()
+        .eq('id', selectedCrew.id);
+        
+      if (error) throw error;
+      
+      setSubCrewsList(prevSubCrews => 
+        prevSubCrews.filter(subCrew => !selectedCrew.subcrews.includes(subCrew.id))
+      );
 
-    setCrewsList(prevList => 
-      prevList.filter(crew => crew.id !== selectedCrew.id)
-    );
-    
-    setIsDeleteDialogOpen(false);
-    setSelectedCrew(null);
-    
-    toast({
-      title: "Бригада удалена",
-      description: `Бригада "${selectedCrew.name}" успешно удалена`
-    });
+      setCrewsList(prevList => 
+        prevList.filter(crew => crew.id !== selectedCrew.id)
+      );
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedCrew(null);
+      
+      toast({
+        title: "Бригада удалена",
+        description: `Бригада "${selectedCrew.name}" успешно удалена`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка удаления",
+        description: error.message || "Не удалось удалить бригаду",
+        variant: "destructive"
+      });
+      console.error("Error deleting crew:", error);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const openManageMembers = (crew: Crew) => {
@@ -131,33 +254,51 @@ const CrewsPage = () => {
     return employees.filter(employee => !selectedCrew.members.includes(employee.id));
   };
 
-  const addEmployeeToCrew = (employeeId: string) => {
+  const addEmployeeToCrew = async (employeeId: string) => {
     if (!selectedCrew) return;
 
-    setCrewsList(prevList => 
-      prevList.map(crew => 
-        crew.id === selectedCrew.id 
-          ? { 
-              ...crew, 
-              members: [...crew.members, employeeId]
-            } 
-          : crew
-      )
-    );
+    try {
+      const updatedMembers = [...selectedCrew.members, employeeId];
+      
+      const { error } = await supabase
+        .from('crews')
+        .update({ members: updatedMembers })
+        .eq('id', selectedCrew.id);
+        
+      if (error) throw error;
+      
+      setCrewsList(prevList => 
+        prevList.map(crew => 
+          crew.id === selectedCrew.id 
+            ? { 
+                ...crew, 
+                members: updatedMembers
+              } 
+            : crew
+        )
+      );
 
-    setSelectedCrew(prev => 
-      prev ? { ...prev, members: [...prev.members, employeeId] } : null
-    );
-    
-    const employee = getEmployeeById(employeeId);
-    
-    toast({
-      title: "Сотрудник добавлен",
-      description: `${employee?.name} добавлен в бригаду "${selectedCrew.name}"`
-    });
+      setSelectedCrew(prev => 
+        prev ? { ...prev, members: updatedMembers } : null
+      );
+      
+      const employee = getEmployeeById(employeeId);
+      
+      toast({
+        title: "Сотрудник добавлен",
+        description: `${employee?.name} добавлен в бригаду "${selectedCrew.name}"`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка добавления сотрудника",
+        description: error.message || "Не удалось добавить сотрудника",
+        variant: "destructive"
+      });
+      console.error("Error adding employee to crew:", error);
+    }
   };
 
-  const removeEmployeeFromCrew = (employeeId: string) => {
+  const removeEmployeeFromCrew = async (employeeId: string) => {
     if (!selectedCrew) return;
 
     if (selectedCrew.foreman === employeeId) {
@@ -178,100 +319,198 @@ const CrewsPage = () => {
       return;
     }
 
-    setCrewsList(prevList => 
-      prevList.map(crew => 
-        crew.id === selectedCrew.id 
-          ? { 
-              ...crew, 
-              members: crew.members.filter(id => id !== employeeId)
-            } 
-          : crew
-      )
-    );
+    try {
+      const updatedMembers = selectedCrew.members.filter(id => id !== employeeId);
+      
+      const { error } = await supabase
+        .from('crews')
+        .update({ members: updatedMembers })
+        .eq('id', selectedCrew.id);
+        
+      if (error) throw error;
+      
+      setCrewsList(prevList => 
+        prevList.map(crew => 
+          crew.id === selectedCrew.id 
+            ? { 
+                ...crew, 
+                members: updatedMembers
+              } 
+            : crew
+        )
+      );
 
-    setSelectedCrew(prev => 
-      prev ? { 
-        ...prev, 
-        members: prev.members.filter(id => id !== employeeId)
-      } : null
-    );
-    
-    const employee = getEmployeeById(employeeId);
-    
-    toast({
-      title: "Сотрудник удален",
-      description: `${employee?.name} удален из бригады "${selectedCrew.name}"`
-    });
+      setSelectedCrew(prev => 
+        prev ? { 
+          ...prev, 
+          members: updatedMembers
+        } : null
+      );
+      
+      const employee = getEmployeeById(employeeId);
+      
+      toast({
+        title: "Сотрудник удален",
+        description: `${employee?.name} удален из бригады "${selectedCrew.name}"`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка удаления сотрудника",
+        description: error.message || "Не удалось удалить сотрудника",
+        variant: "destructive"
+      });
+      console.error("Error removing employee from crew:", error);
+    }
   };
 
   const getSubCrewsForCrew = (crewId: string): SubCrew[] => {
     if (!selectedCrew) return [];
-    return subCrewsList.filter(subCrew => selectedCrew.subCrews.includes(subCrew.id));
+    return subCrewsList.filter(subCrew => selectedCrew.subcrews.includes(subCrew.id));
   };
 
-  const handleAddSubCrew = (newSubCrew: Omit<SubCrew, 'id'>) => {
+  const handleAddSubCrew = async (newSubCrew: Omit<SubCrew, 'id'>) => {
     if (!selectedCrew) return;
 
-    const subCrew: SubCrew = {
-      ...newSubCrew,
-      id: `sc${subCrewsList.length + 1}`,
-    };
-    
-    setSubCrewsList(prev => [...prev, subCrew]);
-    
-    setCrewsList(prevList => 
-      prevList.map(crew => 
-        crew.id === selectedCrew.id 
-          ? { 
-              ...crew, 
-              subCrews: [...crew.subCrews, subCrew.id]
-            } 
-          : crew
-      )
-    );
+    try {
+      const { data, error } = await supabase
+        .from('subcrews')
+        .insert({
+          name: newSubCrew.name,
+          foreman: newSubCrew.foreman,
+          members: newSubCrew.members,
+          specialization: newSubCrew.specialization
+        })
+        .select();
+        
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        const subCrew: SubCrew = data[0];
+        
+        const updatedSubcrews = [...selectedCrew.subcrews, subCrew.id];
+        
+        const { error: updateError } = await supabase
+          .from('crews')
+          .update({ subcrews: updatedSubcrews })
+          .eq('id', selectedCrew.id);
+          
+        if (updateError) throw updateError;
+        
+        setSubCrewsList(prev => [...prev, subCrew]);
+        
+        setCrewsList(prevList => 
+          prevList.map(crew => 
+            crew.id === selectedCrew.id 
+              ? { 
+                  ...crew, 
+                  subcrews: updatedSubcrews
+                } 
+              : crew
+          )
+        );
 
-    setSelectedCrew(prev => 
-      prev ? { ...prev, subCrews: [...prev.subCrews, subCrew.id] } : null
-    );
+        setSelectedCrew(prev => 
+          prev ? { ...prev, subcrews: updatedSubcrews } : null
+        );
+        
+        toast({
+          title: "Подбригада создана",
+          description: `Подбригада "${newSubCrew.name}" успешно создана`
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Ошибка создания подбригады",
+        description: error.message || "Не удалось создать подбригаду",
+        variant: "destructive"
+      });
+      console.error("Error creating subcrew:", error);
+    }
   };
 
-  const handleDeleteSubCrew = (subCrewId: string) => {
+  const handleDeleteSubCrew = async (subCrewId: string) => {
     if (!selectedCrew) return;
 
-    setSubCrewsList(prev => prev.filter(sc => sc.id !== subCrewId));
-    
-    setCrewsList(prevList => 
-      prevList.map(crew => 
-        crew.id === selectedCrew.id 
-          ? { 
-              ...crew, 
-              subCrews: crew.subCrews.filter(id => id !== subCrewId)
-            } 
-          : crew
-      )
-    );
+    try {
+      const { error: deleteError } = await supabase
+        .from('subcrews')
+        .delete()
+        .eq('id', subCrewId);
+        
+      if (deleteError) throw deleteError;
+      
+      const updatedSubcrews = selectedCrew.subcrews.filter(id => id !== subCrewId);
+      
+      const { error: updateError } = await supabase
+        .from('crews')
+        .update({ subcrews: updatedSubcrews })
+        .eq('id', selectedCrew.id);
+        
+      if (updateError) throw updateError;
+      
+      setSubCrewsList(prev => prev.filter(sc => sc.id !== subCrewId));
+      
+      setCrewsList(prevList => 
+        prevList.map(crew => 
+          crew.id === selectedCrew.id 
+            ? { 
+                ...crew, 
+                subcrews: updatedSubcrews
+              } 
+            : crew
+        )
+      );
 
-    setSelectedCrew(prev => 
-      prev ? { 
-        ...prev, 
-        subCrews: prev.subCrews.filter(id => id !== subCrewId)
-      } : null
-    );
-    
-    toast({
-      title: "Подбригада удалена",
-      description: "Подбригада успешно удалена из состава бригады"
-    });
+      setSelectedCrew(prev => 
+        prev ? { 
+          ...prev, 
+          subcrews: updatedSubcrews
+        } : null
+      );
+      
+      toast({
+        title: "Подбригада удалена",
+        description: "Подбригада успешно удалена из состава бригады"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка удаления подбригады",
+        description: error.message || "Не удалось удалить подбригаду",
+        variant: "destructive"
+      });
+      console.error("Error deleting subcrew:", error);
+    }
   };
 
-  const handleUpdateSubCrew = (id: string, updatedSubCrew: Partial<SubCrew>) => {
-    setSubCrewsList(prev => 
-      prev.map(sc => 
-        sc.id === id 
-          ? { ...sc, ...updatedSubCrew } 
-          : sc
-      )
-    );
+  const handleUpdateSubCrew = async (id: string, updatedSubCrew: Partial<SubCrew>) => {
+    try {
+      const { error } = await supabase
+        .from('subcrews')
+        .update(updatedSubCrew)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setSubCrewsList(prev => 
+        prev.map(sc => 
+          sc.id === id 
+            ? { ...sc, ...updatedSubCrew } 
+            : sc
+        )
+      );
+      
+      toast({
+        title: "Подбригада обновлена",
+        description: "Данные подбригады успешно обновлены"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка обновления подбригады",
+        description: error.message || "Не удалось обновить данные подбригады",
+        variant: "destructive"
+      });
+      console.error("Error updating subcrew:", error);
+    }
   };
 
   const getCrewSite = (crewId: string): Site | undefined => {
@@ -322,7 +561,12 @@ const CrewsPage = () => {
           </div>
         </div>
         
-        {filteredCrews.length > 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <span className="ml-2">Загрузка бригад...</span>
+          </div>
+        ) : filteredCrews.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCrews.map(crew => (
               <CrewCard 

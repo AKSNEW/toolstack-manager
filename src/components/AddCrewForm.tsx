@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { employees, crews } from '@/lib/data';
+import { employees } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { supabase } from '@/integrations/supabase/client';
 
 // Create a schema for form validation
 const formSchema = z.object({
@@ -42,26 +43,24 @@ const AddCrewForm = ({ onSuccess }: AddCrewFormProps) => {
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create a new crew in Supabase
+      const { data: newCrew, error } = await supabase
+        .from('crews')
+        .insert({
+          name: data.name,
+          foreman: data.foreman,
+          supervisor: data.supervisor,
+          members: [...data.members, data.foreman], // Include foreman in members
+          subcrews: [], // Add the subCrews property as an empty array
+        })
+        .select();
       
-      // Create a new crew
-      const newCrew = {
-        id: `c${crews.length + 1}`,
-        name: data.name,
-        foreman: data.foreman,
-        supervisor: data.supervisor,
-        members: [...data.members, data.foreman], // Include foreman in members
-        subCrews: [], // Add the subCrews property as an empty array
-      };
-      
-      // Add to the crews array (in a real app, this would be an API call)
-      crews.push(newCrew);
+      if (error) throw error;
       
       toast.success('Бригада успешно создана');
       onSuccess();
-    } catch (error) {
-      toast.error('Ошибка при создании бригады');
+    } catch (error: any) {
+      toast.error('Ошибка при создании бригады: ' + error.message);
       console.error(error);
     }
   };
