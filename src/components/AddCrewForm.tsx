@@ -64,7 +64,14 @@ const AddCrewForm = ({ onSuccess }: AddCrewFormProps) => {
             department: emp.department,
             email: emp.email,
             phone: emp.phone,
-            avatar: emp.avatar
+            avatar: emp.avatar,
+            // Добавляем необходимые поля, соответствующие типу Employee
+            activeRentals: [],
+            rentalHistory: [],
+            // Другие необязательные поля можно оставить undefined
+            user_id: emp.user_id,
+            whatsapp: emp.whatsapp,
+            telegram: emp.telegram
           }));
           setDbEmployees(formattedEmployees);
         } else {
