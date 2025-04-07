@@ -16,7 +16,7 @@ export const subCrews: SubCrew[] = [
 export const crews: Crew[] = [
   {
     id: 'c1',
-    name: 'Основная бригада А',
+    name: 'Пример бригады',
     foreman: 'e3', // Mikhail Sokolov
     supervisor: 'e2', // Natalia Volkova
     members: ['e1', 'e3', 'e4'],
