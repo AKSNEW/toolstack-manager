@@ -37,7 +37,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 const ProfilePage = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [employee, setEmployee] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,6 +61,7 @@ const ProfilePage = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
+        console.log("Loading employee data for user ID:", user.id);
         // Load employee data
         const { data: employeeData, error: employeeError } = await supabase
           .from('employees')
@@ -69,11 +70,13 @@ const ProfilePage = () => {
           .single();
 
         if (employeeError) {
+          console.error("Error fetching employee data:", employeeError);
           if (employeeError.code !== 'PGRST116') { // PGRST116: No rows found error
             throw employeeError;
           }
         }
 
+        console.log("Employee data loaded:", employeeData);
         setEmployee(employeeData || null);
 
         // Reset form with data
@@ -107,27 +110,64 @@ const ProfilePage = () => {
   const saveField = async (field: keyof ProfileFormValues, value: any) => {
     if (!user) return;
     
+    setIsSaving(true);
+    
     try {
-      // Save to employees table
-      const { error } = await supabase
-        .from('employees')
-        .update({
-          [field]: value,
-        })
-        .eq('user_id', user.id);
+      console.log(`Saving field "${field}" with value:`, value);
+      
+      // If we don't have an employee record yet, create one
+      if (!employee) {
+        console.log("No employee record found, creating one...");
+        const { data: newEmployee, error: createError } = await supabase
+          .from('employees')
+          .insert([{
+            user_id: user.id,
+            name: field === 'name' ? value : '',
+            position: field === 'position' ? value : '',
+            department: field === 'department' ? value : '',
+            phone: field === 'phone' ? value : '',
+            avatar: field === 'avatar' ? value : '',
+            whatsapp: field === 'whatsapp' ? value : '',
+            telegram: field === 'telegram' ? value : '',
+            email: user.email
+          }])
+          .select();
+          
+        if (createError) throw createError;
+        
+        setEmployee(newEmployee?.[0] || null);
+        console.log("New employee record created:", newEmployee?.[0]);
+      } else {
+        // Update existing employee record
+        const { error } = await supabase
+          .from('employees')
+          .update({
+            [field]: value,
+          })
+          .eq('user_id', user.id);
 
-      if (error) throw error;
+        if (error) {
+          console.error("Error updating employee record:", error);
+          throw error;
+        }
+        
+        // Update local state to reflect the change
+        setEmployee(prev => prev ? { ...prev, [field]: value } : null);
+      }
 
       toast({
         title: "Поле обновлено",
         description: "Ваши данные успешно сохранены",
       });
     } catch (error: any) {
+      console.error('Error saving field:', error);
       toast({
         title: "Ошибка сохранения",
         description: error.message || "Не удалось сохранить данные",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
