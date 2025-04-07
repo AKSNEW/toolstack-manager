@@ -23,15 +23,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, MessageCircle, Phone } from "lucide-react";
 
 const profileSchema = z.object({
-  username: z.string().min(3, { message: "Имя пользователя должно содержать минимум 3 символа" }).optional(),
-  avatar_url: z.string().optional(),
-  whatsapp: z.string().optional(),
-  telegram: z.string().optional(),
   name: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
   position: z.string().min(2, { message: "Должность обязательна" }),
   department: z.string().min(2, { message: "Отдел обязателен" }),
   phone: z.string().min(5, { message: "Телефон обязателен" }),
   avatar: z.string().url({ message: "Введите корректный URL изображения" }).optional(),
+  whatsapp: z.string().optional(),
+  telegram: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -47,15 +45,13 @@ const ProfilePage = () => {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      username: "",
-      avatar_url: "",
-      whatsapp: "",
-      telegram: "",
       name: "",
       position: "",
       department: "",
       phone: "",
       avatar: "",
+      whatsapp: "",
+      telegram: "",
     },
   });
 
@@ -65,66 +61,33 @@ const ProfilePage = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Load profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          throw profileError;
-        }
-
-        setProfile(profileData);
-
-        // Load or create employee data
+        // Load employee data
         const { data: employeeData, error: employeeError } = await supabase
           .from('employees')
           .select('*')
           .eq('user_id', user.id)
           .single();
 
-        if (employeeError && employeeError.code !== 'PGRST116') { // PGRST116: No rows found error
-          throw employeeError;
+        if (employeeError) {
+          if (employeeError.code !== 'PGRST116') { // PGRST116: No rows found error
+            throw employeeError;
+          }
         }
 
-        if (!employeeData) {
-          // Create new employee record linked to this user
-          const { data: newEmployee, error: createError } = await supabase
-            .from('employees')
-            .insert({
-              name: profileData.username || '',
-              position: '',
-              department: '',
-              email: user.email || '',
-              phone: '',
-              avatar: profileData.avatar_url || '',
-              user_id: user.id,
-              whatsapp: profileData.whatsapp || '',
-              telegram: profileData.telegram || '',
-            })
-            .select()
-            .single();
+        setEmployee(employeeData || null);
 
-          if (createError) throw createError;
-          setEmployee(newEmployee);
-        } else {
-          setEmployee(employeeData);
+        // Reset form with data
+        if (employeeData) {
+          profileForm.reset({
+            name: employeeData.name || "",
+            position: employeeData.position || "",
+            department: employeeData.department || "",
+            phone: employeeData.phone || "",
+            avatar: employeeData.avatar || "",
+            whatsapp: employeeData.whatsapp || "",
+            telegram: employeeData.telegram || "",
+          });
         }
-
-        // Reset form with combined data
-        profileForm.reset({
-          username: profileData.username || "",
-          avatar_url: profileData.avatar_url || "",
-          whatsapp: profileData.whatsapp || "",
-          telegram: profileData.telegram || "",
-          name: employeeData?.name || "",
-          position: employeeData?.position || "",
-          department: employeeData?.department || "",
-          phone: employeeData?.phone || "",
-          avatar: employeeData?.avatar || "",
-        });
       } catch (error: any) {
         console.error('Error loading profile data:', error);
         toast({
@@ -145,30 +108,15 @@ const ProfilePage = () => {
     if (!user) return;
     
     try {
-      if (['username', 'avatar_url', 'whatsapp', 'telegram'].includes(field)) {
-        // Save to profiles table
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            [field]: value,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', user.id);
+      // Save to employees table
+      const { error } = await supabase
+        .from('employees')
+        .update({
+          [field]: value,
+        })
+        .eq('user_id', user.id);
 
-        if (error) throw error;
-      }
-
-      if (['name', 'position', 'department', 'phone', 'avatar', 'whatsapp', 'telegram'].includes(field)) {
-        // Also save to employees table
-        const { error } = await supabase
-          .from('employees')
-          .update({
-            [field === 'avatar_url' ? 'avatar' : field]: value,
-          })
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Поле обновлено",
@@ -197,8 +145,9 @@ const ProfilePage = () => {
     return null;
   }
 
-  const getInitials = (email: string) => {
-    return email.substring(0, 2).toUpperCase();
+  const getInitials = (name: string) => {
+    if (!name) return user.email?.substring(0, 2).toUpperCase() || "??";
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
   return (
@@ -213,13 +162,13 @@ const ProfilePage = () => {
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-32 w-32">
-                  {profile?.avatar_url ? (
-                    <AvatarImage src={profile.avatar_url} alt={profile.username || user.email} />
+                  {employee?.avatar ? (
+                    <AvatarImage src={employee.avatar} alt={employee.name || user.email} />
                   ) : null}
-                  <AvatarFallback className="text-2xl">{getInitials(user.email || '')}</AvatarFallback>
+                  <AvatarFallback className="text-2xl">{getInitials(employee?.name || '')}</AvatarFallback>
                 </Avatar>
                 <div className="text-center">
-                  <h3 className="font-medium text-lg">{profile?.username || 'Пользователь'}</h3>
+                  <h3 className="font-medium text-lg">{employee?.name || 'Пользователь'}</h3>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               </div>
@@ -227,49 +176,7 @@ const ProfilePage = () => {
               <div className="flex-1">
                 <Form {...profileForm}>
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Личные данные</h3>
-                    <FormField
-                      control={profileForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Имя пользователя</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Введите имя пользователя" 
-                              {...field} 
-                              onChange={(e) => {
-                                field.onChange(e);
-                                saveField('username', e.target.value);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="avatar_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL аватара (профиль)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="https://example.com/avatar.jpg" 
-                              {...field} 
-                              onChange={(e) => {
-                                field.onChange(e);
-                                saveField('avatar_url', e.target.value);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <h3 className="text-lg font-medium pt-4">Данные сотрудника</h3>
+                    <h3 className="text-lg font-medium">Данные сотрудника</h3>
                     <FormField
                       control={profileForm.control}
                       name="name"
@@ -355,7 +262,7 @@ const ProfilePage = () => {
                       name="avatar"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>URL аватара (сотрудник)</FormLabel>
+                          <FormLabel>URL аватара</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="https://example.com/avatar.jpg" 
