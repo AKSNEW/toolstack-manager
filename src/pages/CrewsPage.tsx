@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Crew, Employee, Site, SubCrew } from '@/lib/data';
 import { employees, sites } from '@/lib/data';
@@ -530,6 +531,7 @@ const CrewsPage = () => {
           </Button>
         </div>
         
+        {/* Search bar */}
         <div className="glass rounded-xl mb-8 p-4">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -551,6 +553,7 @@ const CrewsPage = () => {
           </div>
         </div>
         
+        {/* Crew list */}
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
@@ -582,6 +585,7 @@ const CrewsPage = () => {
           </div>
         )}
         
+        {/* Add crew dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -595,6 +599,7 @@ const CrewsPage = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Crew details dialog */}
         <Dialog open={!!selectedCrew && !isEditDialogOpen && !showManageMembers && !showSubCrews} onOpenChange={() => closeDialog()}>
           {selectedCrew && (
             <DialogContent className="sm:max-w-[650px]">
@@ -606,6 +611,7 @@ const CrewsPage = () => {
               </DialogHeader>
               
               <div className="mt-4 space-y-6">
+                {/* Foreman and Supervisor cards */}
                 <div className="grid grid-cols-2 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
@@ -658,6 +664,7 @@ const CrewsPage = () => {
                   </Card>
                 </div>
                 
+                {/* Site assignment */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Назначенный объект</CardTitle>
@@ -677,6 +684,7 @@ const CrewsPage = () => {
                   </CardContent>
                 </Card>
                 
+                {/* Subcrews section */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="text-lg font-medium">
@@ -729,6 +737,7 @@ const CrewsPage = () => {
                   )}
                 </div>
                 
+                {/* Crew members section */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="text-lg font-medium">
@@ -814,6 +823,7 @@ const CrewsPage = () => {
           )}
         </Dialog>
 
+        {/* Manage subcrews dialog */}
         <Dialog open={showSubCrews} onOpenChange={setShowSubCrews}>
           {selectedCrew && (
             <DialogContent className="sm:max-w-[700px]">
@@ -843,6 +853,7 @@ const CrewsPage = () => {
           )}
         </Dialog>
 
+        {/* Manage members dialog */}
         <Dialog open={showManageMembers} onOpenChange={setShowManageMembers}>
           {selectedCrew && (
             <DialogContent className="sm:max-w-[700px]">
@@ -928,4 +939,81 @@ const CrewsPage = () => {
                       <TableRow>
                         <TableHead>Сотрудник</TableHead>
                         <TableHead>Должность</TableHead>
-                        <Table
+                        <TableHead>Отдел</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getAvailableEmployees().map(employee => (
+                        <TableRow key={employee.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center">
+                              <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
+                                <img 
+                                  src={employee.avatar} 
+                                  alt={employee.name} 
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                              {employee.name}
+                            </div>
+                          </TableCell>
+                          <TableCell>{employee.position}</TableCell>
+                          <TableCell>{employee.department}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              onClick={() => addEmployeeToCrew(employee.id)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-4 w-4 text-primary" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      
+                      {getAvailableEmployees().length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                            Все доступные сотрудники уже добавлены в бригаду
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              
+              <DialogFooter className="mt-4">
+                <Button onClick={closeManageMembers}>
+                  Готово
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          )}
+        </Dialog>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Это действие нельзя отменить. Будет удалена вся информация о бригаде и связанных подбригадах.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteCrew} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Удалить
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TransitionWrapper>
+  );
+};
+
+export default CrewsPage;
