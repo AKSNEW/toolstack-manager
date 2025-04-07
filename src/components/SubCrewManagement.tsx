@@ -10,6 +10,7 @@ import { Label } from './ui/label';
 import { Select } from './ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { adaptSubCrewFromDB, adaptSubCrewToDB, adaptCrewToDB } from '@/lib/supabase-adapters';
 
 interface SubCrewManagementProps {
   subCrews: SubCrew[];
@@ -60,31 +61,28 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
     }
 
     try {
+      const newSubCrewData = {
+        name: newSubCrewName,
+        foreman: newSubCrewForeman,
+        members: [newSubCrewForeman],
+        specialization: newSubCrewSpecialization,
+      };
+
       const { data: newSubCrew, error } = await supabase
         .from('subcrews')
-        .insert({
-          name: newSubCrewName,
-          foreman: newSubCrewForeman,
-          members: [newSubCrewForeman],
-          specialization: newSubCrewSpecialization,
-        })
+        .insert(adaptSubCrewToDB(newSubCrewData))
         .select();
         
       if (error) throw error;
       
       if (newSubCrew && newSubCrew[0]) {
-        onAddSubCrew({
-          name: newSubCrewName,
-          foreman: newSubCrewForeman,
-          members: [newSubCrewForeman],
-          specialization: newSubCrewSpecialization,
-        });
+        onAddSubCrew(newSubCrewData);
         
         const { error: updateError } = await supabase
           .from('crews')
-          .update({
-            subcrews: [...(subCrews.map(sc => sc.id)), newSubCrew[0].id]
-          })
+          .update(adaptCrewToDB({
+            subCrews: [...(subCrews.map(sc => sc.id)), newSubCrew[0].id]
+          }))
           .eq('id', crewId);
           
         if (updateError) throw updateError;
@@ -130,7 +128,7 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
       
       const { error } = await supabase
         .from('subcrews')
-        .update({ members: updatedMembers })
+        .update(adaptSubCrewToDB({ members: updatedMembers }))
         .eq('id', selectedSubCrew.id);
         
       if (error) throw error;
@@ -174,7 +172,7 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
       
       const { error } = await supabase
         .from('subcrews')
-        .update({ members: updatedMembers })
+        .update(adaptSubCrewToDB({ members: updatedMembers }))
         .eq('id', selectedSubCrew.id);
         
       if (error) throw error;
@@ -291,7 +289,7 @@ const SubCrewManagement: React.FC<SubCrewManagementProps> = ({
                 id="subcrew-specialization"
                 value={newSubCrewSpecialization}
                 onChange={(e) => setNewSubCrewSpecialization(e.target.value)}
-                placeholder="Например: Электромонтаж, Сантехника, и т.д."
+                placeholder="Наприм��р: Электромонтаж, Сантехника, и т.д."
               />
             </div>
             

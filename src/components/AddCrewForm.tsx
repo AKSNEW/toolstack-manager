@@ -51,7 +51,7 @@ const AddCrewForm = ({ onSuccess }: AddCrewFormProps) => {
           foreman: data.foreman,
           supervisor: data.supervisor,
           members: [...data.members, data.foreman], // Include foreman in members
-          subcrews: [], // Add the subCrews property as an empty array
+          subcrews: [], // Add the subcrews property as an empty array
         })
         .select();
       

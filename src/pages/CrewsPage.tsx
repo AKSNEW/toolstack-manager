@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SubCrewManagement from '@/components/SubCrewManagement';
 import { supabase } from '@/integrations/supabase/client';
+import { adaptCrewFromDB, adaptCrewToDB, adaptSubCrewFromDB, adaptSubCrewToDB } from '@/lib/supabase-adapters';
 
 const CrewsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +45,7 @@ const CrewsPage = () => {
         if (subcrewsError) throw subcrewsError;
         
         if (fetchedCrews && fetchedCrews.length > 0) {
-          setCrewsList(fetchedCrews);
+          setCrewsList(fetchedCrews.map(adaptCrewFromDB));
         } else {
           import('@/lib/data').then(module => {
             setCrewsList(module.crews);
@@ -52,7 +53,7 @@ const CrewsPage = () => {
         }
         
         if (fetchedSubcrews && fetchedSubcrews.length > 0) {
-          setSubCrewsList(fetchedSubcrews);
+          setSubCrewsList(fetchedSubcrews.map(adaptSubCrewFromDB));
         } else {
           import('@/lib/data').then(module => {
             setSubCrewsList(module.subCrews);
@@ -124,13 +125,7 @@ const CrewsPage = () => {
     try {
       const { error } = await supabase
         .from('crews')
-        .update({
-          name: updatedCrew.name,
-          foreman: updatedCrew.foreman,
-          supervisor: updatedCrew.supervisor,
-          members: updatedCrew.members,
-          subcrews: updatedCrew.subcrews
-        })
+        .update(adaptCrewToDB(updatedCrew))
         .eq('id', id);
         
       if (error) throw error;
@@ -184,7 +179,7 @@ const CrewsPage = () => {
     }
 
     try {
-      for (const subCrewId of selectedCrew.subcrews) {
+      for (const subCrewId of selectedCrew.subCrews) {
         const { error } = await supabase
           .from('subcrews')
           .delete()
@@ -201,7 +196,7 @@ const CrewsPage = () => {
       if (error) throw error;
       
       setSubCrewsList(prevSubCrews => 
-        prevSubCrews.filter(subCrew => !selectedCrew.subcrews.includes(subCrew.id))
+        prevSubCrews.filter(subCrew => !selectedCrew.subCrews.includes(subCrew.id))
       );
 
       setCrewsList(prevList => 
@@ -262,7 +257,7 @@ const CrewsPage = () => {
       
       const { error } = await supabase
         .from('crews')
-        .update({ members: updatedMembers })
+        .update(adaptCrewToDB({ members: updatedMembers }))
         .eq('id', selectedCrew.id);
         
       if (error) throw error;
@@ -324,7 +319,7 @@ const CrewsPage = () => {
       
       const { error } = await supabase
         .from('crews')
-        .update({ members: updatedMembers })
+        .update(adaptCrewToDB({ members: updatedMembers }))
         .eq('id', selectedCrew.id);
         
       if (error) throw error;
@@ -365,7 +360,7 @@ const CrewsPage = () => {
 
   const getSubCrewsForCrew = (crewId: string): SubCrew[] => {
     if (!selectedCrew) return [];
-    return subCrewsList.filter(subCrew => selectedCrew.subcrews.includes(subCrew.id));
+    return subCrewsList.filter(subCrew => selectedCrew.subCrews.includes(subCrew.id));
   };
 
   const handleAddSubCrew = async (newSubCrew: Omit<SubCrew, 'id'>) => {
@@ -374,24 +369,19 @@ const CrewsPage = () => {
     try {
       const { data, error } = await supabase
         .from('subcrews')
-        .insert({
-          name: newSubCrew.name,
-          foreman: newSubCrew.foreman,
-          members: newSubCrew.members,
-          specialization: newSubCrew.specialization
-        })
+        .insert(adaptSubCrewToDB(newSubCrew))
         .select();
         
       if (error) throw error;
       
       if (data && data[0]) {
-        const subCrew: SubCrew = data[0];
+        const subCrew = adaptSubCrewFromDB(data[0]);
         
-        const updatedSubcrews = [...selectedCrew.subcrews, subCrew.id];
+        const updatedSubcrews = [...selectedCrew.subCrews, subCrew.id];
         
         const { error: updateError } = await supabase
           .from('crews')
-          .update({ subcrews: updatedSubcrews })
+          .update(adaptCrewToDB({ subCrews: updatedSubcrews }))
           .eq('id', selectedCrew.id);
           
         if (updateError) throw updateError;
@@ -403,14 +393,14 @@ const CrewsPage = () => {
             crew.id === selectedCrew.id 
               ? { 
                   ...crew, 
-                  subcrews: updatedSubcrews
+                  subCrews: updatedSubcrews
                 } 
               : crew
           )
         );
 
         setSelectedCrew(prev => 
-          prev ? { ...prev, subcrews: updatedSubcrews } : null
+          prev ? { ...prev, subCrews: updatedSubcrews } : null
         );
         
         toast({
@@ -439,11 +429,11 @@ const CrewsPage = () => {
         
       if (deleteError) throw deleteError;
       
-      const updatedSubcrews = selectedCrew.subcrews.filter(id => id !== subCrewId);
+      const updatedSubcrews = selectedCrew.subCrews.filter(id => id !== subCrewId);
       
       const { error: updateError } = await supabase
         .from('crews')
-        .update({ subcrews: updatedSubcrews })
+        .update(adaptCrewToDB({ subCrews: updatedSubcrews }))
         .eq('id', selectedCrew.id);
         
       if (updateError) throw updateError;
@@ -455,7 +445,7 @@ const CrewsPage = () => {
           crew.id === selectedCrew.id 
             ? { 
                 ...crew, 
-                subcrews: updatedSubcrews
+                subCrews: updatedSubcrews
               } 
             : crew
         )
@@ -464,7 +454,7 @@ const CrewsPage = () => {
       setSelectedCrew(prev => 
         prev ? { 
           ...prev, 
-          subcrews: updatedSubcrews
+          subCrews: updatedSubcrews
         } : null
       );
       
@@ -486,7 +476,7 @@ const CrewsPage = () => {
     try {
       const { error } = await supabase
         .from('subcrews')
-        .update(updatedSubCrew)
+        .update(adaptSubCrewToDB(updatedSubCrew))
         .eq('id', id);
         
       if (error) throw error;
@@ -938,83 +928,4 @@ const CrewsPage = () => {
                       <TableRow>
                         <TableHead>Сотрудник</TableHead>
                         <TableHead>Должность</TableHead>
-                        <TableHead>Отдел</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {getAvailableEmployees().map(employee => (
-                        <TableRow key={employee.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center">
-                              <div className="h-8 w-8 rounded-full overflow-hidden mr-2">
-                                <img 
-                                  src={employee.avatar} 
-                                  alt={employee.name} 
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
-                              {employee.name}
-                            </div>
-                          </TableCell>
-                          <TableCell>{employee.position}</TableCell>
-                          <TableCell>{employee.department}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              onClick={() => addEmployeeToCrew(employee.id)}
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                            >
-                              <Plus className="h-4 w-4 text-primary" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      
-                      {getAvailableEmployees().length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
-                            Все сотрудники уже добавлены в бригаду
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-              
-              <DialogFooter className="mt-4">
-                <Button onClick={closeManageMembers}>
-                  Готово
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          )}
-        </Dialog>
-
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Вы собираетесь удалить бригаду "{selectedCrew?.name}". Это действие нельзя отменить.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Отмена</AlertDialogCancel>
-              <AlertDialogAction 
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={handleDeleteCrew}
-              >
-                Удалить
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </TransitionWrapper>
-  );
-};
-
-export default CrewsPage;
+                        <Table
