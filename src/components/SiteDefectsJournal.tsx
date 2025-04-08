@@ -1,145 +1,20 @@
 
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Defect, SiteMedia } from '@/lib/types';
-import { employees } from '@/lib/data/employees';
+import { mockDefects } from '@/lib/data/defects'; // We'll need to move the mock data to a separate file
 import SiteMediaForm from './SiteMediaForm';
-import SiteMediaGallery from './SiteMediaGallery';
-import { 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle2, 
-  Plus, 
-  Search, 
-  X,
-  ChevronDown,
-  ImageIcon,
-  Video,
-  PanelRight,
-  PanelRightClose,
-  Wrench
-} from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import DefectsList from './defects/DefectsList';
+import DefectsSearch from './defects/DefectsSearch';
+import AddDefectForm from './defects/AddDefectForm';
+import ResolveDefectForm from './defects/ResolveDefectForm';
 
 interface SiteDefectsJournalProps {
   siteId: string;
   siteName: string;
 }
-
-// Mock data for defects
-const mockDefects: Defect[] = [
-  {
-    id: 'def-001',
-    siteId: 's1',
-    title: 'Протечка в крыше корпуса А',
-    description: 'При сильном дожде обнаружена протечка на 5 этаже в районе лифтовой шахты.',
-    reportedBy: 'e1',
-    reportedDate: '2023-04-15T10:30:00Z',
-    status: 'open',
-    media: [
-      {
-        id: 'media-001',
-        defectId: 'def-001',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1580901368919-7738efb0f87e',
-        description: 'Следы воды на потолке возле лифта',
-        uploadedBy: 'e1',
-        uploadedDate: '2023-04-15T10:45:00Z',
-      }
-    ]
-  },
-  {
-    id: 'def-002',
-    siteId: 's1',
-    title: 'Трещина в фундаменте',
-    description: 'Во время осмотра обнаружена трещина в фундаменте длиной около 1 метра в юго-восточной части здания.',
-    reportedBy: 'e2',
-    reportedDate: '2023-04-10T08:45:00Z',
-    status: 'in-progress',
-    media: [
-      {
-        id: 'media-002',
-        defectId: 'def-002',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1603994189975-502a1aefdbb5',
-        description: 'Трещина в фундаменте - общий вид',
-        uploadedBy: 'e2',
-        uploadedDate: '2023-04-10T09:00:00Z',
-      },
-      {
-        id: 'media-003',
-        defectId: 'def-002',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1621503828642-a756be7255c8',
-        description: 'Трещина в фундаменте - крупный план',
-        uploadedBy: 'e2',
-        uploadedDate: '2023-04-10T09:05:00Z',
-      },
-      {
-        id: 'media-004',
-        defectId: 'def-002',
-        type: 'video',
-        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        description: 'Видео осмотра трещины',
-        uploadedBy: 'e2',
-        uploadedDate: '2023-04-10T09:10:00Z',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1603994189975-502a1aefdbb5'
-      }
-    ]
-  },
-  {
-    id: 'def-003',
-    siteId: 's1',
-    title: 'Неисправность электропроводки',
-    description: 'В корпусе Б на 3-м этаже обнаружены проблемы с электропроводкой, розетки не работают.',
-    reportedBy: 'e3',
-    reportedDate: '2023-04-05T14:20:00Z',
-    status: 'resolved',
-    resolvedBy: 'e4',
-    resolvedDate: '2023-04-08T16:30:00Z',
-    resolution: 'Заменена электропроводка и установлены новые розетки.',
-  },
-  {
-    id: 'def-004',
-    siteId: 's2',
-    title: 'Проблема с вентиляцией',
-    description: 'Система вентиляции работает с перебоями на 2-м этаже.',
-    reportedBy: 'e1',
-    reportedDate: '2023-04-12T11:15:00Z',
-    status: 'open',
-  },
-];
 
 const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteName }) => {
   const { toast } = useToast();
@@ -151,14 +26,6 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
   const [selectedDefect, setSelectedDefect] = useState<Defect | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [isAddMediaOpen, setIsAddMediaOpen] = useState(false);
-  
-  const [newDefect, setNewDefect] = useState({
-    title: '',
-    description: '',
-  });
-  
-  const [resolution, setResolution] = useState('');
-  const [resolvedBy, setResolvedBy] = useState('');
   
   // Filter defects by site, search term, status, and active tab
   const filteredDefects = defects.filter(defect => {
@@ -177,8 +44,8 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
     return matchesSearch && matchesStatus && matchesTab;
   });
   
-  const handleAddDefect = () => {
-    if (!newDefect.title.trim() || !newDefect.description.trim()) {
+  const handleAddDefect = (data: { title: string; description: string }) => {
+    if (!data.title.trim() || !data.description.trim()) {
       toast({
         title: 'Ошибка',
         description: 'Заполните все обязательные поля',
@@ -190,8 +57,8 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
     const newDefectObj: Defect = {
       id: `def-${defects.length + 1}`,
       siteId,
-      title: newDefect.title,
-      description: newDefect.description,
+      title: data.title,
+      description: data.description,
       reportedBy: 'e1', // Current user ID
       reportedDate: new Date().toISOString(),
       status: 'open',
@@ -199,7 +66,6 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
     };
     
     setDefects([...defects, newDefectObj]);
-    setNewDefect({ title: '', description: '' });
     setIsAddDefectOpen(false);
     
     toast({
@@ -208,8 +74,8 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
     });
   };
   
-  const handleResolveDefect = () => {
-    if (!selectedDefect || !resolution.trim() || !resolvedBy) {
+  const handleResolveDefect = (data: { resolution: string; resolvedBy: string }) => {
+    if (!selectedDefect || !data.resolution.trim() || !data.resolvedBy) {
       toast({
         title: 'Ошибка',
         description: 'Необходимо указать решение проблемы и исполнителя',
@@ -222,14 +88,12 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
       defect.id === selectedDefect.id ? {
         ...defect,
         status: 'resolved',
-        resolvedBy: resolvedBy,
+        resolvedBy: data.resolvedBy,
         resolvedDate: new Date().toISOString(),
-        resolution,
+        resolution: data.resolution,
       } : defect
     ));
     
-    setResolution('');
-    setResolvedBy('');
     setSelectedDefect(null);
     setIsResolveDefectOpen(false);
     
@@ -239,15 +103,18 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
     });
   };
   
-  const handleStatusChange = (defect: Defect, newStatus: 'open' | 'in-progress' | 'resolved') => {
+  const handleStatusChange = (defectId: string, newStatus: 'open' | 'in-progress' | 'resolved') => {
     if (newStatus === 'resolved') {
-      setSelectedDefect(defect);
-      setIsResolveDefectOpen(true);
+      const defect = defects.find(d => d.id === defectId);
+      if (defect) {
+        setSelectedDefect(defect);
+        setIsResolveDefectOpen(true);
+      }
       return;
     }
     
     setDefects(defects.map(d => 
-      d.id === defect.id ? { ...d, status: newStatus } : d
+      d.id === defectId ? { ...d, status: newStatus } : d
     ));
     
     toast({
@@ -293,19 +160,6 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
     });
   };
   
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'open':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'in-progress':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'resolved':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      default:
-        return null;
-    }
-  };
-  
   const getStatusText = (status: string) => {
     switch (status) {
       case 'open':
@@ -319,37 +173,17 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
     }
   };
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'bg-red-100 text-red-800';
-      case 'in-progress':
-        return 'bg-amber-100 text-amber-800';
-      case 'resolved':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
-  const getEmployeeName = (empId: string) => {
-    const employee = employees.find(emp => emp.id === empId);
-    return employee ? employee.name : 'Неизвестный сотрудник';
-  };
-  
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-  
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter(null);
+  };
+
+  const handleClearFilter = (filterType: 'search' | 'status') => {
+    if (filterType === 'search') {
+      setSearchTerm('');
+    } else if (filterType === 'status') {
+      setStatusFilter(null);
+    }
   };
 
   return (
@@ -363,236 +197,27 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
         </TabsList>
       </Tabs>
       
-      <div className="flex items-center justify-between">
-        <div className="relative flex-grow max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <input 
-            type="text" 
-            placeholder="Поиск неисправностей..." 
-            className="w-full h-10 pl-10 pr-4 rounded-lg bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button 
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-        
-        <Button 
-          onClick={() => setIsAddDefectOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Добавить запись
-        </Button>
-      </div>
+      <DefectsSearch 
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onAddDefect={() => setIsAddDefectOpen(true)}
+        activeFilters={{ searchTerm, status: statusFilter }}
+        onClearFilter={handleClearFilter}
+        onClearAllFilters={clearFilters}
+        getStatusText={getStatusText}
+      />
       
-      {(searchTerm || statusFilter) && (
-        <div className="flex items-center">
-          <p className="text-sm text-muted-foreground">Активные фильтры:</p>
-          {searchTerm && (
-            <Badge variant="outline" className="ml-2">
-              Поиск: {searchTerm}
-              <button onClick={() => setSearchTerm('')} className="ml-1 focus:outline-none">
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-          {statusFilter && (
-            <Badge variant="outline" className="ml-2">
-              Статус: {getStatusText(statusFilter)}
-              <button onClick={() => setStatusFilter(null)} className="ml-1 focus:outline-none">
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={clearFilters}
-            className="ml-2 h-8 text-xs"
-          >
-            Сбросить все
-          </Button>
-        </div>
-      )}
-      
-      {filteredDefects.length > 0 ? (
-        <div className="space-y-4">
-          {filteredDefects.map((defect) => (
-            <Collapsible key={defect.id} className="glass p-4 rounded-lg">
-              <div className="flex justify-between items-start mb-3">
-                <CollapsibleTrigger className="text-left">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">{defect.title}</h3>
-                    {defect.status === 'resolved' && (
-                      <Badge className="bg-green-100 text-green-800">
-                        <Wrench className="h-3 w-3 mr-1" />
-                        <span>Исправлено: {getEmployeeName(defect.resolvedBy || '')}</span>
-                      </Badge>
-                    )}
-                  </div>
-                </CollapsibleTrigger>
-                <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor(defect.status)}>
-                    {getStatusIcon(defect.status)}
-                    <span className="ml-1">{getStatusText(defect.status)}</span>
-                  </Badge>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1.5"
-                    onClick={() => {
-                      setSelectedDefect(defect);
-                      setIsAddMediaOpen(true);
-                    }}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Медиа</span>
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {defect.status !== 'open' && (
-                        <DropdownMenuItem onClick={() => handleStatusChange(defect, 'open')}>
-                          <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
-                          <span>Отметить как открытую</span>
-                        </DropdownMenuItem>
-                      )}
-                      {defect.status !== 'in-progress' && (
-                        <DropdownMenuItem onClick={() => handleStatusChange(defect, 'in-progress')}>
-                          <Clock className="h-4 w-4 mr-2 text-amber-500" />
-                          <span>Взять в работу</span>
-                        </DropdownMenuItem>
-                      )}
-                      {defect.status !== 'resolved' && (
-                        <DropdownMenuItem onClick={() => handleStatusChange(defect, 'resolved')}>
-                          <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
-                          <span>Отметить как устраненную</span>
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              
-              <p className="text-sm mb-3">{defect.description}</p>
-              
-              <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4">
-                <div>
-                  <span className="block">Кем добавлено:</span>
-                  <span>{getEmployeeName(defect.reportedBy)}</span>
-                </div>
-                <div>
-                  <span className="block">Дата добавления:</span>
-                  <span>{formatDate(defect.reportedDate)}</span>
-                </div>
-              </div>
-              
-              <CollapsibleContent className="mt-4 pt-4 border-t border-border">
-                {/* Media gallery */}
-                {defect.media && defect.media.length > 0 ? (
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        <Video className="h-4 w-4" />
-                        <span>Медиафайлы ({defect.media.length})</span>
-                      </h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => {
-                          setSelectedDefect(defect);
-                          setIsAddMediaOpen(true);
-                        }}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Добавить
-                      </Button>
-                    </div>
-                    <SiteMediaGallery 
-                      media={defect.media}
-                      onDelete={handleDeleteMedia}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex justify-between items-center mb-4">
-                    <p className="text-sm text-muted-foreground">Нет прикрепленных медиафайлов</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() => {
-                        setSelectedDefect(defect);
-                        setIsAddMediaOpen(true);
-                      }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Добавить медиа
-                    </Button>
-                  </div>
-                )}
-                
-                {defect.status === 'resolved' && defect.resolution && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                      <Wrench className="h-4 w-4 text-green-600" />
-                      Информация об устранении:
-                    </h4>
-                    
-                    <div className="bg-green-50 p-3 rounded-md mb-3">
-                      <p className="text-sm">{defect.resolution}</p>
-                    </div>
-                    
-                    <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="block font-medium">Кем устранено:</span>
-                        <span>{getEmployeeName(defect.resolvedBy || '')}</span>
-                      </div>
-                      <div>
-                        <span className="block font-medium">Дата устранения:</span>
-                        <span>{formatDate(defect.resolvedDate || '')}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </div>
-      ) : (
-        <div className="glass rounded-xl p-8 text-center">
-          <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <h3 className="text-lg font-medium mb-1">Записи не найдены</h3>
-          <p className="text-muted-foreground">
-            {searchTerm || statusFilter ? 
-              'Не найдено записей соответствующих заданным критериям' : 
-              'В журнале неисправностей пока нет записей для этого объекта'}
-          </p>
-          {(searchTerm || statusFilter) && (
-            <Button
-              onClick={clearFilters}
-              variant="outline"
-              className="mt-4"
-            >
-              Сбросить фильтры
-            </Button>
-          )}
-        </div>
-      )}
+      <DefectsList 
+        defects={filteredDefects}
+        onStatusChange={handleStatusChange}
+        onAddMedia={(defect) => {
+          setSelectedDefect(defect);
+          setIsAddMediaOpen(true);
+        }}
+        onDeleteMedia={handleDeleteMedia}
+        onClearFilters={clearFilters}
+        hasFilters={!!searchTerm || !!statusFilter}
+      />
       
       {/* Add Defect Dialog */}
       <Dialog open={isAddDefectOpen} onOpenChange={setIsAddDefectOpen}>
@@ -604,33 +229,10 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Наименование неисправности</Label>
-              <Input
-                id="title"
-                placeholder="Введите короткое название неисправности"
-                value={newDefect.title}
-                onChange={(e) => setNewDefect({ ...newDefect, title: e.target.value })}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Описание неисправности</Label>
-              <Textarea
-                id="description"
-                placeholder="Подробно опишите обнаруженную неисправность"
-                rows={4}
-                value={newDefect.description}
-                onChange={(e) => setNewDefect({ ...newDefect, description: e.target.value })}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDefectOpen(false)}>Отмена</Button>
-            <Button onClick={handleAddDefect}>Добавить</Button>
-          </DialogFooter>
+          <AddDefectForm 
+            onSubmit={handleAddDefect}
+            onCancel={() => setIsAddDefectOpen(false)}
+          />
         </DialogContent>
       </Dialog>
       
@@ -644,42 +246,10 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="resolvedBy">Кем устранено</Label>
-              <Select
-                value={resolvedBy}
-                onValueChange={setResolvedBy}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите сотрудника" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map(employee => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="resolution">Описание выполненных работ</Label>
-              <Textarea
-                id="resolution"
-                placeholder="Опишите подробно, как была устранена неисправность и какие работы были выполнены"
-                rows={4}
-                value={resolution}
-                onChange={(e) => setResolution(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsResolveDefectOpen(false)}>Отмена</Button>
-            <Button onClick={handleResolveDefect}>Подтвердить</Button>
-          </DialogFooter>
+          <ResolveDefectForm 
+            onSubmit={handleResolveDefect}
+            onCancel={() => setIsResolveDefectOpen(false)}
+          />
         </DialogContent>
       </Dialog>
       
@@ -688,8 +258,6 @@ const SiteDefectsJournal: React.FC<SiteDefectsJournalProps> = ({ siteId, siteNam
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" />
-              <Video className="h-4 w-4 ml-1" />
               <span>Добавить медиафайл</span>
             </DialogTitle>
             <DialogDescription>
