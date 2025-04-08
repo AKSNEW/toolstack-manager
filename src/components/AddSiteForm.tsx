@@ -1,57 +1,33 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { crews } from '@/lib/data';
-import { createSite } from '@/lib/data/sites';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { toast } from 'sonner';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createSite } from '@/lib/data/sites';
+import { Form } from '@/components/ui/form';
+import { toast } from 'sonner';
 
-// Create a schema for form validation
-const formSchema = z.object({
-  name: z.string().min(3, { message: 'Название должно содержать минимум 3 символа' }),
-  address: z.string().min(5, { message: 'Адрес должен содержать минимум 5 символов' }),
-  status: z.enum(['planning', 'active', 'completed']),
-  crewId: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  description: z.string().min(10, { message: 'Описание должно содержать минимум 10 символов' }),
-});
-
-type FormData = z.infer<typeof formSchema>;
+// Import our form components
+import SiteBasicInfoFields from '@/components/forms/site/SiteBasicInfoFields';
+import SiteStatusFields from '@/components/forms/site/SiteStatusFields';
+import SiteDateFields from '@/components/forms/site/SiteDateFields';
+import SiteDescriptionField from '@/components/forms/site/SiteDescriptionField';
+import FormActions from '@/components/forms/FormActions';
+import { siteFormSchema, SiteFormData, defaultSiteFormValues } from '@/components/forms/site/SiteFormSchema';
 
 interface AddSiteFormProps {
   onSuccess: () => void;
 }
 
 const AddSiteForm = ({ onSuccess }: AddSiteFormProps) => {
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      address: '',
-      status: 'planning',
-      crewId: '',
-      startDate: '',
-      endDate: '',
-      description: '',
-    },
+  const form = useForm<SiteFormData>({
+    resolver: zodResolver(siteFormSchema),
+    defaultValues: defaultSiteFormValues,
   });
 
-  const { control, handleSubmit, formState: { isSubmitting }, watch } = form;
-  
-  const selectedStatus = watch('status');
+  const { control, handleSubmit, formState: { isSubmitting } } = form;
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: SiteFormData) => {
     try {
-      // Set loading state
-      form.formState.isSubmitting = true;
-      
       // Create a new site in the database
       const newSite = await createSite({
         name: data.name,
@@ -78,140 +54,15 @@ const AddSiteForm = ({ onSuccess }: AddSiteFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Название объекта</FormLabel>
-              <FormControl>
-                <Input placeholder="Название объекта" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <SiteBasicInfoFields control={control} />
+        <SiteStatusFields control={control} />
+        <SiteDateFields control={control} />
+        <SiteDescriptionField control={control} />
+        <FormActions 
+          onCancel={onSuccess} 
+          isSubmitting={isSubmitting} 
+          submitLabel="Создать объект"
         />
-
-        <FormField
-          control={control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Адрес</FormLabel>
-              <FormControl>
-                <Input placeholder="Адрес объекта" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Статус объекта</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите статус объекта" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="planning">Планирование</SelectItem>
-                  <SelectItem value="active">Активный</SelectItem>
-                  <SelectItem value="completed">Завершен</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="crewId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Назначенная бригада</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите бригаду (необязательно)" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {crews.map(crew => (
-                    <SelectItem key={crew.id} value={crew.id}>
-                      {crew.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Дата начала</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Предполагаемая дата завершения</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Описание объекта</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Введите описание объекта" className="min-h-[100px]" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onSuccess}>
-            Отмена
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Создание...' : 'Создать объект'}
-          </Button>
-        </div>
       </form>
     </Form>
   );
