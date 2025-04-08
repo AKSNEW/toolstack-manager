@@ -29,9 +29,10 @@ export let sites: Site[] = [...initialSites];
 // Function to fetch sites from database
 export async function fetchSites(): Promise<Site[]> {
   try {
-    // Using .from() without specific type to avoid TypeScript errors
-    // @ts-ignore - The sites table exists in the database but not in TypeScript definitions
-    const { data, error } = await supabase.from('sites').select('*');
+    // Use any type to bypass TypeScript checks until the types are properly generated
+    const { data, error } = await supabase
+      .from('sites' as any)
+      .select('*');
     
     if (error) {
       console.error('Error fetching sites:', error);
@@ -59,20 +60,22 @@ export async function createSite(site: Omit<Site, 'id'>): Promise<Site | null> {
   try {
     const siteData = adaptSiteForInsert(site);
     
-    // Using .from() without specific type to avoid TypeScript errors
-    // @ts-ignore - The sites table exists in the database but not in TypeScript definitions
     const { data, error } = await supabase
-      .from('sites')
-      .insert(siteData)
-      .select()
-      .single();
+      .from('sites' as any)
+      .insert(siteData as any)
+      .select();
     
     if (error) {
       console.error('Error creating site:', error);
       return null;
     }
     
-    const newSite = adaptSiteFromDB(data as any);
+    if (!data || data.length === 0) {
+      console.error('No data returned after site creation');
+      return null;
+    }
+    
+    const newSite = adaptSiteFromDB(data[0] as any);
     sites.push(newSite); // Update local array
     return newSite;
   } catch (error) {
@@ -86,21 +89,23 @@ export async function updateSite(id: string, siteUpdate: Partial<Site>): Promise
   try {
     const updates = adaptSiteToDB(siteUpdate);
     
-    // Using .from() without specific type to avoid TypeScript errors
-    // @ts-ignore - The sites table exists in the database but not in TypeScript definitions
     const { data, error } = await supabase
-      .from('sites')
-      .update(updates)
+      .from('sites' as any)
+      .update(updates as any)
       .eq('id', id)
-      .select()
-      .single();
+      .select();
     
     if (error) {
       console.error('Error updating site:', error);
       return null;
     }
     
-    const updatedSite = adaptSiteFromDB(data as any);
+    if (!data || data.length === 0) {
+      console.error('No data returned after site update');
+      return null;
+    }
+    
+    const updatedSite = adaptSiteFromDB(data[0] as any);
     
     // Update the local array
     sites = sites.map(s => s.id === id ? updatedSite : s);
@@ -115,10 +120,8 @@ export async function updateSite(id: string, siteUpdate: Partial<Site>): Promise
 // Function to delete a site
 export async function deleteSite(id: string): Promise<boolean> {
   try {
-    // Using .from() without specific type to avoid TypeScript errors
-    // @ts-ignore - The sites table exists in the database but not in TypeScript definitions
     const { error } = await supabase
-      .from('sites')
+      .from('sites' as any)
       .delete()
       .eq('id', id);
     
@@ -141,10 +144,9 @@ export async function deleteSite(id: string): Promise<boolean> {
 async function seedInitialSites() {
   try {
     for (const site of initialSites) {
-      // Using .from() without specific type to avoid TypeScript errors
-      // @ts-ignore - The sites table exists in the database but not in TypeScript definitions
-      const { data, error } = await supabase
-        .from('sites')
+      // Create each initial site in the database
+      await supabase
+        .from('sites' as any)
         .insert({
           name: site.name,
           address: site.address,
@@ -152,17 +154,11 @@ async function seedInitialSites() {
           crew_id: site.crewId,
           start_date: site.startDate,
           description: site.description
-        })
-        .select();
-      
-      if (error) {
-        console.error('Error seeding site:', error);
-      }
+        } as any);
     }
     
     // Refetch sites after seeding
-    // @ts-ignore - The sites table exists in the database but not in TypeScript definitions
-    const { data } = await supabase.from('sites').select('*');
+    const { data } = await supabase.from('sites' as any).select('*');
     if (data) {
       sites = data.map(site => adaptSiteFromDB(site as any));
     }
