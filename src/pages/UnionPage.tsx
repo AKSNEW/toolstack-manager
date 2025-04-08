@@ -1,81 +1,61 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertTriangle, User, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { MessageSquare, AlertTriangle, User, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
 import { employees } from '@/lib/data';
-
-interface UnionMessage {
-  id: string;
-  content: string;
-  createdAt: string;
-  authorId: string; // Only visible to admins
-  anonymous: boolean;
-  category: 'complaint' | 'suggestion' | 'question';
-  status: 'new' | 'in-review' | 'resolved';
-  votes: {
-    employeeId: string;
-    type: 'up' | 'down';
-  }[];
-}
-
-// Mock data for union messages
-const mockMessages: UnionMessage[] = [
-  {
-    id: 'msg-001',
-    content: 'В столовой очень плохая еда. Нужно сменить поставщика.',
-    createdAt: '2023-05-10T14:30:00Z',
-    authorId: 'e1',
-    anonymous: true,
-    category: 'complaint',
-    status: 'new',
-    votes: [
-      { employeeId: 'e2', type: 'up' },
-      { employeeId: 'e3', type: 'up' }
-    ]
-  },
-  {
-    id: 'msg-002',
-    content: 'Предлагаю организовать корпоратив на природе в следующем месяце.',
-    createdAt: '2023-05-08T10:15:00Z',
-    authorId: 'e3',
-    anonymous: true,
-    category: 'suggestion',
-    status: 'in-review',
-    votes: [
-      { employeeId: 'e1', type: 'up' },
-      { employeeId: 'e4', type: 'down' }
-    ]
-  },
-  {
-    id: 'msg-003',
-    content: 'Когда будет следующее повышение зарплаты?',
-    createdAt: '2023-05-05T16:45:00Z',
-    authorId: 'e2',
-    anonymous: false,
-    category: 'question',
-    status: 'resolved',
-    votes: []
-  }
-];
+import { UnionMessage } from '@/lib/types';
+import { useAuth } from '@/context/AuthContext';
+import { fetchUnionMessages, createUnionMessage, updateMessageStatus, updateMessageVotes } from '@/services/unionService';
 
 const UnionPage: React.FC = () => {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<UnionMessage[]>(mockMessages);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<UnionMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [category, setCategory] = useState<'complaint' | 'suggestion' | 'question'>('complaint');
   const [anonymous, setAnonymous] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [isAdmin, setIsAdmin] = useState(false); // Toggle for demo purposes
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadMessages();
+  }, []);
+  
+  const loadMessages = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchUnionMessages();
+      setMessages(data);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+      toast({
+        title: "Ошибка загрузки",
+        description: "Не удалось загрузить сообщения профсоюза",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Ошибка аутентификации",
+        description: "Вы должны быть авторизованы, чтобы отправлять сообщения",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (!newMessage.trim()) {
       toast({
@@ -86,74 +66,123 @@ const UnionPage: React.FC = () => {
       return;
     }
     
-    const message: UnionMessage = {
-      id: `msg-${Date.now()}`,
-      content: newMessage,
-      createdAt: new Date().toISOString(),
-      authorId: 'e1', // Current user ID
-      anonymous,
-      category,
-      status: 'new',
-      votes: []
-    };
+    setIsSubmitting(true);
     
-    setMessages([message, ...messages]);
-    setNewMessage('');
-    
-    toast({
-      title: "Сообщение отправлено",
-      description: anonymous ? "Ваше анонимное сообщение отправлено" : "Ваше сообщение отправлено",
-    });
+    try {
+      const message: Omit<UnionMessage, 'id'> = {
+        content: newMessage,
+        createdAt: new Date().toISOString(),
+        authorId: user.id,
+        anonymous,
+        category,
+        status: 'new',
+        votes: []
+      };
+      
+      const createdMessage = await createUnionMessage(message);
+      setMessages([createdMessage, ...messages]);
+      setNewMessage('');
+      
+      toast({
+        title: "Сообщение отправлено",
+        description: anonymous ? "Ваше анонимное сообщение отправлено" : "Ваше сообщение отправлено",
+      });
+    } catch (error) {
+      console.error('Failed to submit message:', error);
+      toast({
+        title: "Ошибка отправки",
+        description: "Не удалось отправить сообщение",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
-  const updateMessageStatus = (id: string, status: 'new' | 'in-review' | 'resolved') => {
-    setMessages(messages.map(msg => 
-      msg.id === id ? { ...msg, status } : msg
-    ));
-    
-    toast({
-      title: "Статус обновлен",
-      description: `Статус сообщения изменен на ${
-        status === 'new' ? 'Новое' : 
-        status === 'in-review' ? 'На рассмотрении' : 'Решено'
-      }`,
-    });
+  const updateStatus = async (id: string, status: 'new' | 'in-review' | 'resolved') => {
+    try {
+      await updateMessageStatus(id, status);
+      
+      setMessages(messages.map(msg => 
+        msg.id === id ? { ...msg, status } : msg
+      ));
+      
+      toast({
+        title: "Статус обновлен",
+        description: `Статус сообщения изменен на ${
+          status === 'new' ? 'Новое' : 
+          status === 'in-review' ? 'На рассмотрении' : 'Решено'
+        }`,
+      });
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast({
+        title: "Ошибка обновления",
+        description: "Не удалось обновить статус сообщения",
+        variant: "destructive",
+      });
+    }
   };
   
-  const handleVote = (id: string, voteType: 'up' | 'down') => {
-    const currentUserId = 'e1'; // Current user ID
+  const handleVote = async (id: string, voteType: 'up' | 'down') => {
+    if (!user) {
+      toast({
+        title: "Ошибка аутентификации",
+        description: "Вы должны быть авторизованы, чтобы голосовать",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    setMessages(messages.map(msg => {
-      if (msg.id !== id) return msg;
+    const currentUserId = user.id;
+    let updatedMessages = [...messages];
+    
+    const messageIndex = updatedMessages.findIndex(msg => msg.id === id);
+    if (messageIndex === -1) return;
+    
+    const message = { ...updatedMessages[messageIndex] };
+    
+    // Check if user already voted
+    const existingVoteIndex = message.votes.findIndex(vote => vote.employeeId === currentUserId);
+    
+    let updatedVotes = [...message.votes];
+    
+    if (existingVoteIndex >= 0) {
+      // User already voted
+      const existingVote = message.votes[existingVoteIndex];
       
-      // Check if user already voted
-      const existingVoteIndex = msg.votes.findIndex(vote => vote.employeeId === currentUserId);
-      
-      if (existingVoteIndex >= 0) {
-        // User already voted, update their vote
-        const existingVote = msg.votes[existingVoteIndex];
-        
-        if (existingVote.type === voteType) {
-          // User is trying to vote the same way, remove their vote
-          const newVotes = [...msg.votes];
-          newVotes.splice(existingVoteIndex, 1);
-          return { ...msg, votes: newVotes };
-        } else {
-          // User is changing their vote
-          const newVotes = [...msg.votes];
-          newVotes[existingVoteIndex] = { employeeId: currentUserId, type: voteType };
-          return { ...msg, votes: newVotes };
-        }
+      if (existingVote.type === voteType) {
+        // User is trying to vote the same way, remove their vote
+        updatedVotes.splice(existingVoteIndex, 1);
       } else {
-        // User hasn't voted, add new vote
-        return { ...msg, votes: [...msg.votes, { employeeId: currentUserId, type: voteType }] };
+        // User is changing their vote
+        updatedVotes[existingVoteIndex] = { employeeId: currentUserId, type: voteType };
       }
-    }));
+    } else {
+      // User hasn't voted, add new vote
+      updatedVotes.push({ employeeId: currentUserId, type: voteType });
+    }
     
-    toast({
-      title: voteType === 'up' ? "Голос отдан" : "Голос против принят",
-      description: "Ваш голос учтен",
-    });
+    try {
+      await updateMessageVotes(id, updatedVotes);
+      
+      // Update the message in the state with new votes
+      message.votes = updatedVotes;
+      updatedMessages[messageIndex] = message;
+      setMessages(updatedMessages);
+      
+      toast({
+        title: voteType === 'up' ? "Голос отдан" : "Голос против принят",
+        description: "Ваш голос учтен",
+      });
+    } catch (error) {
+      console.error('Failed to update votes:', error);
+      toast({
+        title: "Ошибка голосования",
+        description: "Не удалось обновить голоса",
+        variant: "destructive",
+      });
+    }
   };
   
   const filteredMessages = messages.filter(message => {
@@ -193,7 +222,7 @@ const UnionPage: React.FC = () => {
   
   const getAuthorName = (id: string) => {
     const employee = employees.find(emp => emp.id === id);
-    return employee ? employee.name : 'Неизвестный сотрудник';
+    return employee ? employee.name : 'Пользователь';
   };
   
   const formatDate = (dateString: string) => {
@@ -216,6 +245,19 @@ const UnionPage: React.FC = () => {
     const currentUserId = 'e1'; // Current user ID
     return votes.some(vote => vote.employeeId === currentUserId && vote.type === voteType);
   };
+  
+  if (isLoading) {
+    return (
+      <TransitionWrapper>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            <span>Загрузка сообщений...</span>
+          </div>
+        </div>
+      </TransitionWrapper>
+    );
+  }
   
   return (
     <TransitionWrapper className="pb-10">
@@ -254,6 +296,7 @@ const UnionPage: React.FC = () => {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     className="w-full"
+                    disabled={isSubmitting}
                   />
                 </div>
                 
@@ -266,6 +309,7 @@ const UnionPage: React.FC = () => {
                       className={`py-2 px-3 text-sm rounded-md ${
                         category === 'complaint' ? 'bg-red-100 text-red-800' : 'bg-muted'
                       }`}
+                      disabled={isSubmitting}
                     >
                       Жалоба
                     </button>
@@ -275,6 +319,7 @@ const UnionPage: React.FC = () => {
                       className={`py-2 px-3 text-sm rounded-md ${
                         category === 'suggestion' ? 'bg-blue-100 text-blue-800' : 'bg-muted'
                       }`}
+                      disabled={isSubmitting}
                     >
                       Предложение
                     </button>
@@ -284,6 +329,7 @@ const UnionPage: React.FC = () => {
                       className={`py-2 px-3 text-sm rounded-md ${
                         category === 'question' ? 'bg-amber-100 text-amber-800' : 'bg-muted'
                       }`}
+                      disabled={isSubmitting}
                     >
                       Вопрос
                     </button>
@@ -297,12 +343,20 @@ const UnionPage: React.FC = () => {
                     checked={anonymous}
                     onChange={(e) => setAnonymous(e.target.checked)}
                     className="rounded border-gray-300 text-primary focus:ring-primary"
+                    disabled={isSubmitting}
                   />
                   <Label htmlFor="anonymous">Отправить анонимно</Label>
                 </div>
                 
-                <Button type="submit" className="w-full">
-                  Отправить сообщение
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Отправка...
+                    </>
+                  ) : (
+                    'Отправить сообщение'
+                  )}
                 </Button>
               </form>
             </div>
@@ -321,7 +375,7 @@ const UnionPage: React.FC = () => {
             </Tabs>
             
             <div className="space-y-4">
-              {filteredMessages.length > 0 ? (
+              {messages.length > 0 && filteredMessages.length > 0 ? (
                 filteredMessages.map((message) => {
                   const { upVotes, downVotes } = getVotesCount(message.votes);
                   return (
@@ -347,7 +401,7 @@ const UnionPage: React.FC = () => {
                                 size="sm"
                                 variant="outline"
                                 disabled={message.status === 'new'}
-                                onClick={() => updateMessageStatus(message.id, 'new')}
+                                onClick={() => updateStatus(message.id, 'new')}
                                 className="h-7 text-xs px-2"
                               >
                                 Новое
@@ -356,7 +410,7 @@ const UnionPage: React.FC = () => {
                                 size="sm"
                                 variant="outline"
                                 disabled={message.status === 'in-review'}
-                                onClick={() => updateMessageStatus(message.id, 'in-review')}
+                                onClick={() => updateStatus(message.id, 'in-review')}
                                 className="h-7 text-xs px-2"
                               >
                                 В работе
@@ -365,7 +419,7 @@ const UnionPage: React.FC = () => {
                                 size="sm"
                                 variant="outline"
                                 disabled={message.status === 'resolved'}
-                                onClick={() => updateMessageStatus(message.id, 'resolved')}
+                                onClick={() => updateStatus(message.id, 'resolved')}
                                 className="h-7 text-xs px-2"
                               >
                                 Решено

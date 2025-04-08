@@ -66,6 +66,41 @@ export type Database = {
         }
         Relationships: []
       }
+      diagram_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          diagram_id: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at: string
+          diagram_id?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          diagram_id?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagram_comments_diagram_id_fkey"
+            columns: ["diagram_id"]
+            isOneToOne: false
+            referencedRelation: "wiring_diagrams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           avatar: string
@@ -241,6 +276,78 @@ export type Database = {
           location?: string
           name?: string
           status?: string
+          updated_at?: string | null
+          votes?: Json | null
+        }
+        Relationships: []
+      }
+      union_messages: {
+        Row: {
+          anonymous: boolean | null
+          author_id: string
+          category: string
+          content: string
+          created_at: string | null
+          id: string
+          status: string
+          updated_at: string | null
+          votes: Json | null
+        }
+        Insert: {
+          anonymous?: boolean | null
+          author_id: string
+          category: string
+          content: string
+          created_at?: string | null
+          id?: string
+          status: string
+          updated_at?: string | null
+          votes?: Json | null
+        }
+        Update: {
+          anonymous?: boolean | null
+          author_id?: string
+          category?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string | null
+          votes?: Json | null
+        }
+        Relationships: []
+      }
+      wiring_diagrams: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          image_url: string
+          title: string
+          updated_at: string | null
+          votes: Json | null
+        }
+        Insert: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string
+          id?: string
+          image_url: string
+          title: string
+          updated_at?: string | null
+          votes?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          image_url?: string
+          title?: string
           updated_at?: string | null
           votes?: Json | null
         }
