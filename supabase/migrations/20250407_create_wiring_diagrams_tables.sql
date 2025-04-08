@@ -27,7 +27,7 @@ ALTER TABLE public.wiring_diagrams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.diagram_comments ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies for wiring_diagrams
-CREATE POLICY "Allow read access to wiring diagrams for all users"
+CREATE POLICY "Allow read access to diagrams for all users"
   ON public.wiring_diagrams
   FOR SELECT
   USING (true);
@@ -62,14 +62,14 @@ CREATE POLICY "Allow insert for authenticated users"
   TO authenticated
   WITH CHECK (true);
 
-CREATE POLICY "Allow update for own comments"
+CREATE POLICY "Allow update for owner"
   ON public.diagram_comments
   FOR UPDATE
   TO authenticated
-  USING (true);
+  USING (auth.uid()::text = author_id);
 
-CREATE POLICY "Allow delete for own comments"
+CREATE POLICY "Allow delete for owner"
   ON public.diagram_comments
   FOR DELETE
   TO authenticated
-  USING (true);
+  USING (auth.uid()::text = author_id);

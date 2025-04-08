@@ -3,10 +3,44 @@ import { WiringDiagram, DiagramComment } from "./types";
 import { Database } from "@/integrations/supabase/types";
 
 // Type aliases for database rows
-type DiagramRow = Database['public']['Tables']['wiring_diagrams']['Row'];
-type DiagramInsert = Database['public']['Tables']['wiring_diagrams']['Insert'];
-type DiagramCommentRow = Database['public']['Tables']['diagram_comments']['Row'];
-type DiagramCommentInsert = Database['public']['Tables']['diagram_comments']['Insert'];
+// Since the 'wiring_diagrams' table doesn't exist in the generated types yet, we'll create compatible types
+interface DiagramRow {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  category: string;
+  created_by: string;
+  created_at: string;
+  votes: any[];
+  updated_at?: string;
+}
+
+interface DiagramInsert {
+  title: string;
+  description: string;
+  image_url: string;
+  category: string;
+  created_by: string;
+  created_at: string;
+  votes: any[];
+}
+
+interface DiagramCommentRow {
+  id: string;
+  diagram_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface DiagramCommentInsert {
+  diagram_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+}
 
 // Convert database diagram row to app WiringDiagram type
 export function adaptDiagramFromDB(diagram: DiagramRow): WiringDiagram {

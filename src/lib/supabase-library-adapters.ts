@@ -3,8 +3,32 @@ import { LibraryItem } from "./types";
 import { Database } from "@/integrations/supabase/types";
 
 // Type aliases for database rows
-type LibraryItemRow = Database['public']['Tables']['library_items']['Row'];
-type LibraryItemInsert = Database['public']['Tables']['library_items']['Insert'];
+// Since the 'library_items' table doesn't exist in the generated types yet, we'll create compatible types
+interface LibraryItemRow {
+  id: string;
+  name: string;
+  type: string;
+  author?: string;
+  year?: string;
+  description: string;
+  external_link?: string;
+  file_url?: string;
+  author_id: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface LibraryItemInsert {
+  name: string;
+  type: string;
+  author?: string;
+  year?: string;
+  description: string;
+  external_link?: string;
+  file_url?: string;
+  author_id: string;
+  created_at: string;
+}
 
 // Convert database library item row to app LibraryItem type
 export function adaptLibraryItemFromDB(item: LibraryItemRow): LibraryItem {

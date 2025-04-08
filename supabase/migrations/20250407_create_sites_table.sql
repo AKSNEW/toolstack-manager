@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS public.sites (
   name TEXT NOT NULL,
   address TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('planning', 'active', 'completed')),
-  crew_id UUID REFERENCES public.crews(id),
+  crew_id UUID,
   start_date TEXT,
   end_date TEXT,
   description TEXT NOT NULL DEFAULT '',

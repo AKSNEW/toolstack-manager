@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { sites, crews } from '@/lib/data';
+import { crews } from '@/lib/data';
+import { createSite } from '@/lib/data/sites';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,12 +49,11 @@ const AddSiteForm = ({ onSuccess }: AddSiteFormProps) => {
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Set loading state
+      form.formState.isSubmitting = true;
       
-      // Create a new site
-      const newSite = {
-        id: `s${sites.length + 1}`,
+      // Create a new site in the database
+      const newSite = await createSite({
         name: data.name,
         address: data.address,
         status: data.status,
@@ -61,13 +61,14 @@ const AddSiteForm = ({ onSuccess }: AddSiteFormProps) => {
         startDate: data.startDate || undefined,
         endDate: data.endDate || undefined,
         description: data.description,
-      };
+      });
       
-      // Add to the sites array (in a real app, this would be an API call)
-      sites.push(newSite);
-      
-      toast.success('Объект успешно создан');
-      onSuccess();
+      if (newSite) {
+        toast.success('Объект успешно создан');
+        onSuccess();
+      } else {
+        toast.error('Ошибка при создании объекта');
+      }
     } catch (error) {
       toast.error('Ошибка при создании объекта');
       console.error(error);

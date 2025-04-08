@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accounting_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crews: {
         Row: {
           created_at: string | null
@@ -138,6 +162,87 @@ export type Database = {
           name?: string
           specialization?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      toolbox_items: {
+        Row: {
+          author_id: string
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          image: string
+          links: string[] | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          image: string
+          links?: string[] | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          image?: string
+          links?: string[] | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tools: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          image: string
+          is_edc: boolean | null
+          links: string[] | null
+          location: string
+          name: string
+          status: string
+          updated_at: string | null
+          votes: Json | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          image: string
+          is_edc?: boolean | null
+          links?: string[] | null
+          location: string
+          name: string
+          status: string
+          updated_at?: string | null
+          votes?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          image?: string
+          is_edc?: boolean | null
+          links?: string[] | null
+          location?: string
+          name?: string
+          status?: string
+          updated_at?: string | null
+          votes?: Json | null
         }
         Relationships: []
       }

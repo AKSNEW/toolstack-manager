@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
-import { sites, crews, Site } from '@/lib/data';
+import React, { useState, useEffect } from 'react';
+import { sites, fetchSites } from '@/lib/data/sites';
+import { crews, Site } from '@/lib/data';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { 
   Building, 
@@ -10,13 +11,15 @@ import {
   CheckCircle,
   Clock,
   FileEdit,
-  ClipboardList
+  ClipboardList,
+  Loader2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import AddSiteForm from '@/components/AddSiteForm';
 import SiteCard from '@/components/SiteCard';
 import SiteDefectsJournal from '@/components/SiteDefectsJournal';
+import { toast } from 'sonner';
 
 const SitesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,9 +27,40 @@ const SitesPage = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [isDefectJournalOpen, setIsDefectJournalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [localSites, setLocalSites] = useState<Site[]>([]);
+
+  useEffect(() => {
+    const loadSites = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchSites();
+        setLocalSites(data);
+      } catch (error) {
+        console.error("Error loading sites:", error);
+        toast.error("Ошибка при загрузке объектов");
+        setLocalSites(sites); // Fallback to in-memory data
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadSites();
+  }, []);
+
+  // Refresh sites when a new one is added
+  const handleAddSuccess = async () => {
+    setIsAddDialogOpen(false);
+    try {
+      const data = await fetchSites();
+      setLocalSites(data);
+    } catch (error) {
+      console.error("Error refreshing sites:", error);
+    }
+  };
 
   // Filter sites based on search and status
-  const filteredSites = sites.filter(site => {
+  const filteredSites = localSites.filter(site => {
     const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         site.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         site.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -130,7 +164,15 @@ const SitesPage = () => {
         </div>
         
         {/* Sites grid */}
-        {filteredSites.length > 0 ? (
+        {isLoading ? (
+          <div className="glass rounded-xl p-12 text-center">
+            <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
+            <h3 className="text-lg font-medium mb-1">Загрузка объектов...</h3>
+            <p className="text-muted-foreground">
+              Пожалуйста, подождите
+            </p>
+          </div>
+        ) : filteredSites.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSites.map(site => (
               <SiteCard 
@@ -163,7 +205,7 @@ const SitesPage = () => {
             <DialogHeader>
               <DialogTitle>Добавить новый объект</DialogTitle>
             </DialogHeader>
-            <AddSiteForm onSuccess={() => setIsAddDialogOpen(false)} />
+            <AddSiteForm onSuccess={handleAddSuccess} />
           </DialogContent>
         </Dialog>
         

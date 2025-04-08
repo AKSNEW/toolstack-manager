@@ -3,8 +3,29 @@ import { Site } from "./types";
 import { Database } from "@/integrations/supabase/types";
 
 // Type aliases for database rows
-type SiteRow = Database['public']['Tables']['sites']['Row'];
-type SiteInsert = Database['public']['Tables']['sites']['Insert'];
+// Since the 'sites' table doesn't exist in the generated types yet, we'll create compatible types
+interface SiteRow {
+  id: string;
+  name: string;
+  address: string;
+  status: string;
+  crew_id?: string;
+  start_date?: string;
+  end_date?: string;
+  description: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface SiteInsert {
+  name: string;
+  address: string;
+  status: string;
+  crew_id?: string;
+  start_date?: string;
+  end_date?: string;
+  description: string;
+}
 
 // Convert database site row to app Site type
 export function adaptSiteFromDB(site: SiteRow): Site {
