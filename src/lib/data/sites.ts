@@ -30,7 +30,7 @@ export let sites: Site[] = [...initialSites];
 export async function fetchSites(): Promise<Site[]> {
   try {
     const { data, error } = await supabase
-      .from('sites')
+      .from('sites' as any)
       .select('*') as any;
     
     if (error) {
@@ -60,7 +60,7 @@ export async function createSite(site: Omit<Site, 'id'>): Promise<Site | null> {
     const siteData = adaptSiteForInsert(site);
     
     const { data, error } = await supabase
-      .from('sites')
+      .from('sites' as any)
       .insert(siteData as any)
       .select() as any;
     
@@ -89,7 +89,7 @@ export async function updateSite(id: string, siteUpdate: Partial<Site>): Promise
     const updates = adaptSiteToDB(siteUpdate);
     
     const { data, error } = await supabase
-      .from('sites')
+      .from('sites' as any)
       .update(updates as any)
       .eq('id', id)
       .select() as any;
@@ -120,7 +120,7 @@ export async function updateSite(id: string, siteUpdate: Partial<Site>): Promise
 export async function deleteSite(id: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('sites')
+      .from('sites' as any)
       .delete()
       .eq('id', id) as any;
     
@@ -145,7 +145,7 @@ async function seedInitialSites() {
     for (const site of initialSites) {
       // Create each initial site in the database
       await supabase
-        .from('sites')
+        .from('sites' as any)
         .insert({
           name: site.name,
           address: site.address,
@@ -157,7 +157,7 @@ async function seedInitialSites() {
     }
     
     // Refetch sites after seeding
-    const { data } = await supabase.from('sites').select('*') as any;
+    const { data } = await supabase.from('sites' as any).select('*') as any;
     if (data) {
       sites = data.map(site => adaptSiteFromDB(site as any));
     }

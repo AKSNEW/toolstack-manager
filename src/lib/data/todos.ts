@@ -1,19 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Todo } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
-
-export interface Todo {
-  id: string;
-  title: string;
-  description?: string;
-  status: 'pending' | 'in-progress' | 'completed';
-  dueDate?: string;
-  siteId?: string;
-  assignedTo?: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt?: string;
-}
 
 // Adapter to convert from database format to app format
 function adaptTodoFromDB(todo: any): Todo {
@@ -62,7 +50,7 @@ function adaptTodoForUpdate(todo: Partial<Todo>): any {
 export async function fetchTodos(): Promise<Todo[]> {
   try {
     const { data, error } = await supabase
-      .from('todos')
+      .from('todos' as any)
       .select(`
         *,
         employees:assigned_to(name, avatar),
@@ -93,7 +81,7 @@ export async function fetchTodos(): Promise<Todo[]> {
 export async function fetchSiteTodos(siteId: string): Promise<Todo[]> {
   try {
     const { data, error } = await supabase
-      .from('todos')
+      .from('todos' as any)
       .select(`
         *,
         employees:assigned_to(name, avatar)
@@ -123,7 +111,7 @@ export async function fetchSiteTodos(siteId: string): Promise<Todo[]> {
 export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>): Promise<Todo | null> {
   try {
     const { data, error } = await supabase
-      .from('todos')
+      .from('todos' as any)
       .insert(adaptTodoForInsert(todo))
       .select() as any;
     
@@ -143,7 +131,7 @@ export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedA
 export async function updateTodo(id: string, todoUpdate: Partial<Todo>): Promise<Todo | null> {
   try {
     const { data, error } = await supabase
-      .from('todos')
+      .from('todos' as any)
       .update(adaptTodoForUpdate(todoUpdate))
       .eq('id', id)
       .select() as any;
@@ -164,7 +152,7 @@ export async function updateTodo(id: string, todoUpdate: Partial<Todo>): Promise
 export async function deleteTodo(id: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('todos')
+      .from('todos' as any)
       .delete()
       .eq('id', id) as any;
     

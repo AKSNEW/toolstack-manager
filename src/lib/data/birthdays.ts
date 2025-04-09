@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Employee } from '@/lib/types';
 
 // Get upcoming birthdays from database
-export async function fetchBirthdays(): Promise<Employee[]> {
+export async function fetchBirthdays(): Promise<Array<Employee & { upcomingBirthday: Date; daysUntil: number }>> {
   try {
     // Get current date components
     const today = new Date();
@@ -44,10 +44,27 @@ export async function fetchBirthdays(): Promise<Employee[]> {
           const nextBirthday = new Date(today.getFullYear() + 1, birthMonth - 1, birthDay);
           daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         }
+
+        // Create the upcoming birthday date object
+        const upcomingBirthday = new Date(
+          birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)
+            ? today.getFullYear()
+            : today.getFullYear() + 1,
+          birthMonth - 1,
+          birthDay
+        );
         
         return {
           ...emp,
+          id: emp.id,
+          name: emp.name,
+          position: emp.position,
+          department: emp.department,
+          email: emp.email,
+          phone: emp.phone,
+          avatar: emp.avatar,
           birthDate: emp.birth_date,
+          upcomingBirthday,
           daysUntilBirthday
         };
       })
@@ -62,7 +79,7 @@ export async function fetchBirthdays(): Promise<Employee[]> {
 }
 
 // Get upcoming birthdays (fallback for mock data)
-export function getUpcomingBirthdays(): Employee[] {
+export function getUpcomingBirthdays(): Array<Employee & { upcomingBirthday: Date; daysUntil: number }> {
   const employees = require('./employees').employees;
   
   // Get today's date
@@ -89,12 +106,22 @@ export function getUpcomingBirthdays(): Employee[] {
         const nextBirthday = new Date(today.getFullYear() + 1, birthMonth, birthDay);
         daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       }
+
+      // Create the upcoming birthday date object
+      const upcomingBirthday = new Date(
+        birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)
+          ? today.getFullYear()
+          : today.getFullYear() + 1,
+        birthMonth,
+        birthDay
+      );
       
       return {
         ...emp,
-        daysUntilBirthday
+        upcomingBirthday,
+        daysUntil: daysUntilBirthday
       };
     })
-    .filter(emp => emp.daysUntilBirthday <= 30)
-    .sort((a, b) => a.daysUntilBirthday - b.daysUntilBirthday);
+    .filter(emp => emp.daysUntil <= 30)
+    .sort((a, b) => a.daysUntil - b.daysUntil);
 }

@@ -55,7 +55,7 @@ const SiteDialogs: React.FC<SiteDialogsProps> = ({
         onOpenChange={setIsDefectJournalOpen}
       >
         <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
-          {selectedSite && <SiteDefectsJournal site={selectedSite} />}
+          {selectedSite && <SiteDefectsJournal siteId={selectedSite.id} siteName={selectedSite.name} />}
         </DialogContent>
       </Dialog>
     </>

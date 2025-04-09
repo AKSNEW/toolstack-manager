@@ -8,12 +8,22 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(dateString: string): string {
   if (!dateString) return '';
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('ru-RU', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  }).format(date);
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    
+    return new Intl.DateTimeFormat('ru-RU', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
 }
 
 export function formatPhoneNumber(phone: string): string {

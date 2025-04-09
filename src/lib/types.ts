@@ -247,3 +247,16 @@ export interface UnionMessage {
     type: 'up' | 'down';
   }[];
 }
+
+export interface Todo {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  dueDate?: string;
+  siteId?: string;
+  assignedTo?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
+}
