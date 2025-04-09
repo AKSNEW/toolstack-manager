@@ -21,6 +21,7 @@ import UnionPage from "./pages/UnionPage";
 import WiringDiagramsPage from "./pages/WiringDiagramsPage";
 import SiteIncidentsPage from "./pages/SiteIncidentsPage";
 import DesiredToolsPage from "./pages/DesiredToolsPage";
+import TodosPage from "./pages/TodosPage"; // Import the new TodosPage
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 
@@ -66,6 +67,7 @@ const App = () => {
                       <Route path="/accounting" element={<ProtectedRoute><AccountingPage /></ProtectedRoute>} />
                       <Route path="/union" element={<ProtectedRoute><UnionPage /></ProtectedRoute>} />
                       <Route path="/wiring-diagrams" element={<ProtectedRoute><WiringDiagramsPage /></ProtectedRoute>} />
+                      <Route path="/todos" element={<ProtectedRoute><TodosPage /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </AnimatePresence>

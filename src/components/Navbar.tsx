@@ -19,7 +19,7 @@ import {
   LogOut,
   User,
   UserCircle,
-  Settings
+  ListTodo
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/context/AuthContext";
@@ -92,6 +92,11 @@ const navItems: NavItem[] = [
     href: "/sites",
     label: "Объекты",
     icon: Building,
+  },
+  {
+    href: "/todos",
+    label: "Задачи",
+    icon: ListTodo,
   },
   {
     href: "/wiring-diagrams",

@@ -12,7 +12,7 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 import { employees } from '@/lib/data/employees';
 import { useAuth } from '@/context/AuthContext';
 import { createTodo } from '@/lib/data/todos';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -58,6 +58,18 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({
     },
   });
 
+  React.useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        title: '',
+        description: '',
+        status: 'pending',
+        dueDate: undefined,
+        assignedTo: undefined,
+      });
+    }
+  }, [isOpen, form]);
+
   const onSubmit = async (data: TodoFormValues) => {
     if (!user) {
       toast.error('Необходимо авторизоваться');
@@ -70,7 +82,7 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({
       // Create todo in the database
       const result = await createTodo({
         title: data.title,
-        description: data.description || undefined,
+        description: data.description || '',
         status: data.status,
         dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
         assignedTo: data.assignedTo,
@@ -99,6 +111,9 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать задачу</DialogTitle>
+          <DialogDescription>
+            Заполните форму для создания новой задачи
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>

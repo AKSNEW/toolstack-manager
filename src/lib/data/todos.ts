@@ -8,7 +8,7 @@ function adaptTodoFromDB(todo: any): Todo {
   return {
     id: todo.id,
     title: todo.title,
-    description: todo.description,
+    description: todo.description || '',
     status: todo.status as 'pending' | 'in-progress' | 'completed',
     dueDate: todo.due_date,
     siteId: todo.site_id,
@@ -23,11 +23,11 @@ function adaptTodoFromDB(todo: any): Todo {
 function adaptTodoForInsert(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>): any {
   return {
     title: todo.title,
-    description: todo.description,
+    description: todo.description || '',
     status: todo.status,
     due_date: todo.dueDate,
-    site_id: todo.siteId,
-    assigned_to: todo.assignedTo,
+    site_id: todo.siteId || null,
+    assigned_to: todo.assignedTo || null,
     created_by: todo.createdBy
   };
 }
@@ -37,11 +37,11 @@ function adaptTodoForUpdate(todo: Partial<Todo>): any {
   const result: any = {};
   
   if ('title' in todo) result.title = todo.title;
-  if ('description' in todo) result.description = todo.description;
+  if ('description' in todo) result.description = todo.description || '';
   if ('status' in todo) result.status = todo.status;
   if ('dueDate' in todo) result.due_date = todo.dueDate;
-  if ('siteId' in todo) result.site_id = todo.siteId;
-  if ('assignedTo' in todo) result.assigned_to = todo.assignedTo;
+  if ('siteId' in todo) result.site_id = todo.siteId || null;
+  if ('assignedTo' in todo) result.assigned_to = todo.assignedTo || null;
   
   return result;
 }
@@ -110,9 +110,11 @@ export async function fetchSiteTodos(siteId: string): Promise<Todo[]> {
 // Create a new todo
 export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>): Promise<Todo | null> {
   try {
+    const todoData = adaptTodoForInsert(todo);
+    
     const { data, error } = await supabase
       .from('todos' as any)
-      .insert(adaptTodoForInsert(todo))
+      .insert(todoData)
       .select() as any;
     
     if (error) {
