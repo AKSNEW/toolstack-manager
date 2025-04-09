@@ -10,7 +10,9 @@ interface BirthdayCardProps {
 }
 
 const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return 'Дата не указана';
+    
     return new Intl.DateTimeFormat('ru-RU', { 
       day: 'numeric', 
       month: 'long'
@@ -18,13 +20,15 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
   };
   
   const getInitials = (name: string) => {
+    if (!name) return '';
+    
     return name
       .split(' ')
       .map(part => part.charAt(0))
       .join('');
   };
   
-  const getZodiacSign = (date: Date | undefined) => {
+  const getZodiacSign = (date: Date | null | undefined) => {
     if (!date) return "?"; // Safe check for undefined date
     
     const day = date.getDate();
@@ -44,7 +48,7 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
     return "♑︎"; // Capricorn
   };
   
-  const getZodiacName = (date: Date | undefined) => {
+  const getZodiacName = (date: Date | null | undefined) => {
     if (!date) return "Неизвестно"; // Safe check for undefined date
     
     const day = date.getDate();
@@ -65,19 +69,27 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
   };
 
   // Расчет возраста сотрудника
-  const calculateAge = (birthDate: string): number => {
+  const calculateAge = (birthDate: string | undefined): number => {
     if (!birthDate) return 0;
     
-    const today = new Date();
-    const dob = new Date(birthDate);
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age--;
+    try {
+      const today = new Date();
+      const dob = new Date(birthDate);
+      
+      if (isNaN(dob.getTime())) return 0;
+      
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      
+      return age;
+    } catch (error) {
+      console.error('Error calculating age:', error);
+      return 0;
     }
-    
-    return age;
   };
 
   return (
@@ -94,7 +106,7 @@ const BirthdayCard: React.FC<BirthdayCardProps> = ({ employees }) => {
                 <h3 className="font-medium">{employee.name}</h3>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                  <span>{employee.upcomingBirthday ? formatDate(employee.upcomingBirthday) : 'Дата не указана'}</span>
+                  <span>{formatDate(employee.upcomingBirthday)}</span>
                   {employee.upcomingBirthday && (
                     <TooltipProvider>
                       <Tooltip>

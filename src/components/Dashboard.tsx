@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { dashboardStats, tools, getUpcomingBirthdays } from '@/lib/data';
+import { dashboardStats, tools } from '@/lib/data';
 import { fetchBirthdays } from '@/lib/data/birthdays';
 import { fetchTodos } from '@/lib/data/todos';
 import { fetchSites } from '@/lib/data/sites';
@@ -17,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Dashboard: React.FC = () => {
   const [isBirthdayOpen, setIsBirthdayOpen] = useState(false);
-  const [upcomingBirthdays, setUpcomingBirthdays] = useState<Employee[]>([]);
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState<Array<Employee & { upcomingBirthday: Date; daysUntil: number }>>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [recentTodos, setRecentTodos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,12 +27,7 @@ const Dashboard: React.FC = () => {
       try {
         // Load birthdays from database
         const birthdays = await fetchBirthdays();
-        if (birthdays.length > 0) {
-          setUpcomingBirthdays(birthdays);
-        } else {
-          // Fallback to mock data
-          setUpcomingBirthdays(getUpcomingBirthdays());
-        }
+        setUpcomingBirthdays(birthdays);
 
         // Load recent site activity
         const sites = await fetchSites();

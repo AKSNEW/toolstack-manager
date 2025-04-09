@@ -18,11 +18,11 @@ export async function fetchBirthdays(): Promise<Array<Employee & { upcomingBirth
     
     if (error) {
       console.error('Error fetching birthdays:', error);
-      return [];
+      return getUpcomingBirthdays(); // Fall back to mock data on error
     }
     
     if (!data || data.length === 0) {
-      return [];
+      return getUpcomingBirthdays(); // Fall back to mock data if no results
     }
     
     // Filter and sort employees by upcoming birthdays
@@ -65,16 +65,16 @@ export async function fetchBirthdays(): Promise<Array<Employee & { upcomingBirth
           avatar: emp.avatar,
           birthDate: emp.birth_date,
           upcomingBirthday,
-          daysUntilBirthday
+          daysUntil: daysUntilBirthday
         };
       })
-      .filter((emp: any) => emp.daysUntilBirthday <= 30) // Only show birthdays in the next 30 days
-      .sort((a: any, b: any) => a.daysUntilBirthday - b.daysUntilBirthday);
+      .filter((emp: any) => emp.daysUntil <= 30) // Only show birthdays in the next 30 days
+      .sort((a: any, b: any) => a.daysUntil - b.daysUntil);
     
     return employeesWithBirthdays;
   } catch (error) {
     console.error('Error in fetchBirthdays:', error);
-    return [];
+    return getUpcomingBirthdays(); // Fall back to mock data on error
   }
 }
 
