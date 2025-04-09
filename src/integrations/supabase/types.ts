@@ -104,6 +104,7 @@ export type Database = {
       employees: {
         Row: {
           avatar: string
+          birth_date: string | null
           created_at: string | null
           department: string
           email: string
@@ -117,6 +118,7 @@ export type Database = {
         }
         Insert: {
           avatar: string
+          birth_date?: string | null
           created_at?: string | null
           department: string
           email: string
@@ -130,6 +132,7 @@ export type Database = {
         }
         Update: {
           avatar?: string
+          birth_date?: string | null
           created_at?: string | null
           department?: string
           email?: string
@@ -140,6 +143,48 @@ export type Database = {
           telegram?: string | null
           user_id?: string | null
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      library_items: {
+        Row: {
+          author: string | null
+          author_id: string
+          created_at: string | null
+          description: string
+          external_link: string | null
+          file_url: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string | null
+          year: string | null
+        }
+        Insert: {
+          author?: string | null
+          author_id: string
+          created_at?: string | null
+          description: string
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          name: string
+          type: string
+          updated_at?: string | null
+          year?: string | null
+        }
+        Update: {
+          author?: string | null
+          author_id?: string
+          created_at?: string | null
+          description?: string
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string | null
+          year?: string | null
         }
         Relationships: []
       }

@@ -1,19 +1,62 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LibraryItem from '@/components/LibraryItem';
 import AddLibraryItemForm from '@/components/AddLibraryItemForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { libraryItems } from '@/lib/data/library';
+import { LibraryItem as LibraryItemType } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { fetchLibraryItems } from '@/services/libraryService';
+import { Loader2 } from 'lucide-react';
 
 const LibraryPage = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [libraryItems, setLibraryItems] = useState<LibraryItemType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const loadLibraryItems = async () => {
+      try {
+        setIsLoading(true);
+        const items = await fetchLibraryItems();
+        setLibraryItems(items);
+      } catch (error) {
+        console.error('Error loading library items:', error);
+        toast({
+          title: 'Ошибка загрузки',
+          description: 'Не удалось загрузить материалы библиотеки',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadLibraryItems();
+  }, [toast]);
+  
+  const handleLibraryItemAdded = (newItem: LibraryItemType) => {
+    setLibraryItems(prev => [newItem, ...prev]);
+    setIsAddDialogOpen(false);
+  };
   
   const bookItems = libraryItems.filter(item => item.type === 'book');
   const instructionItems = libraryItems.filter(item => item.type === 'instruction');
   const standardItems = libraryItems.filter(item => item.type === 'standard');
+
+  if (isLoading) {
+    return (
+      <TransitionWrapper className="pb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-10 w-10 animate-spin mb-4" />
+          <p className="text-muted-foreground">Загрузка материалов...</p>
+        </div>
+      </TransitionWrapper>
+    );
+  }
 
   return (
     <TransitionWrapper className="pb-10">
@@ -89,7 +132,7 @@ const LibraryPage = () => {
           <DialogHeader>
             <DialogTitle>Добавить материал</DialogTitle>
           </DialogHeader>
-          <AddLibraryItemForm onSuccess={() => setIsAddDialogOpen(false)} />
+          <AddLibraryItemForm onSuccess={handleLibraryItemAdded} />
         </DialogContent>
       </Dialog>
     </TransitionWrapper>

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Employee } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { IdCard } from 'lucide-react';
+import { Calendar, IdCard } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -30,6 +30,7 @@ const formSchema = z.object({
   avatar: z.string().url({
     message: 'Введите корректный URL изображения',
   }),
+  birthDate: z.string().optional(),
   // Optional driver license fields
   hasDriverLicense: z.boolean().optional(),
   driverLicenseNumber: z.string().optional(),
@@ -59,6 +60,7 @@ const AddEmployeeForm = ({ onAddEmployee, onCancel, departments }: AddEmployeeFo
       email: '',
       phone: '',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+      birthDate: '',
       hasDriverLicense: false,
       driverLicenseNumber: '',
       driverLicenseCategory: '',
@@ -79,6 +81,7 @@ const AddEmployeeForm = ({ onAddEmployee, onCancel, departments }: AddEmployeeFo
         email: values.email,
         phone: values.phone,
         avatar: values.avatar,
+        birthDate: values.birthDate,
       };
 
       // Add driver license if provided
@@ -156,6 +159,23 @@ const AddEmployeeForm = ({ onAddEmployee, onCancel, departments }: AddEmployeeFo
                   ))}
                   <option value="New Department">Другой отдел</option>
                 </select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="birthDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Дата рождения</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input type="date" className="pl-10" {...field} />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

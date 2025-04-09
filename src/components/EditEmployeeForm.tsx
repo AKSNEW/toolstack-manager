@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -9,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Employee } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { IdCard, MessageCircle, Phone } from 'lucide-react';
+import { Calendar, IdCard, MessageCircle, Phone } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -32,6 +33,7 @@ const formSchema = z.object({
   }),
   whatsapp: z.string().optional(),
   telegram: z.string().optional(),
+  birthDate: z.string().optional(),
   // Optional driver license fields
   hasDriverLicense: z.boolean().optional(),
   driverLicenseNumber: z.string().optional(),
@@ -64,6 +66,7 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
       avatar: employee.avatar,
       whatsapp: employee.whatsapp || '',
       telegram: employee.telegram || '',
+      birthDate: employee.birthDate || '',
       hasDriverLicense: !!employee.driverLicense,
       driverLicenseNumber: employee.driverLicense?.number || '',
       driverLicenseCategory: employee.driverLicense?.category || '',
@@ -84,7 +87,7 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
         email: values.email,
         phone: values.phone,
         avatar: values.avatar,
-        birthDate: employee.birthDate,
+        birthDate: values.birthDate,
         whatsapp: values.whatsapp,
         telegram: values.telegram,
         user_id: employee.user_id,
@@ -167,6 +170,23 @@ const EditEmployeeForm = ({ employee, onEditEmployee, onCancel, departments }: E
                       ))}
                       <option value="New Department">Другой отдел</option>
                     </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="birthDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Дата рождения</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input type="date" className="pl-10" {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

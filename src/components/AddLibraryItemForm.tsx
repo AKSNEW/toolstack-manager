@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { createLibraryItem } from '@/services/libraryService';
+import { LibraryItem } from '@/lib/types';
+import { useAuth } from '@/context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -33,11 +37,13 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface AddLibraryItemFormProps {
-  onSuccess: () => void;
+  onSuccess: (item: LibraryItem) => void;
 }
 
 const AddLibraryItemForm = ({ onSuccess }: AddLibraryItemFormProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -52,23 +58,48 @@ const AddLibraryItemForm = ({ onSuccess }: AddLibraryItemFormProps) => {
     },
   });
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
+    if (!user) {
+      toast({
+        title: 'Ошибка',
+        description: 'Необходимо авторизоваться для добавления материалов',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      // В реальном приложении здесь был бы API-запрос
-      console.log('Submitted library item:', values);
+      setIsSubmitting(true);
+      
+      const newLibraryItem: Omit<LibraryItem, 'id'> = {
+        name: values.name,
+        type: values.type,
+        author: values.author || undefined,
+        year: values.year || undefined,
+        description: values.description,
+        externalLink: values.externalLink || undefined,
+        fileUrl: values.fileUrl || undefined,
+        authorId: user.id,
+        createdAt: new Date().toISOString(),
+      };
+      
+      const createdItem = await createLibraryItem(newLibraryItem);
       
       toast({
         title: 'Материал добавлен',
         description: `Материал "${values.name}" успешно добавлен`,
       });
       
-      onSuccess();
+      onSuccess(createdItem);
     } catch (error) {
+      console.error('Error submitting library item:', error);
       toast({
         title: 'Ошибка',
         description: 'Не удалось добавить материал',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -199,7 +230,16 @@ const AddLibraryItemForm = ({ onSuccess }: AddLibraryItemFormProps) => {
         />
         
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="submit">Добавить</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Добавление...
+              </>
+            ) : (
+              'Добавить'
+            )}
+          </Button>
         </div>
       </form>
     </Form>

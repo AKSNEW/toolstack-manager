@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, MessageCircle, Phone } from "lucide-react";
+import { Calendar, Loader2, MessageCircle, Phone } from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
@@ -30,6 +30,7 @@ const profileSchema = z.object({
   avatar: z.string().url({ message: "Введите корректный URL изображения" }).optional(),
   whatsapp: z.string().optional(),
   telegram: z.string().optional(),
+  birthDate: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -52,6 +53,7 @@ const ProfilePage = () => {
       avatar: "",
       whatsapp: "",
       telegram: "",
+      birthDate: "",
     },
   });
 
@@ -89,6 +91,7 @@ const ProfilePage = () => {
             avatar: employeeData.avatar || "",
             whatsapp: employeeData.whatsapp || "",
             telegram: employeeData.telegram || "",
+            birthDate: employeeData.birth_date ? new Date(employeeData.birth_date).toISOString().split('T')[0] : "",
           });
         }
       } catch (error: any) {
@@ -115,34 +118,54 @@ const ProfilePage = () => {
     try {
       console.log(`Saving field "${field}" with value:`, value);
       
+      // Map form field names to database column names
+      const dbFieldMap: Record<string, string> = {
+        birthDate: 'birth_date'
+      };
+      
+      const dbField = dbFieldMap[field] || field;
+      
+      // Special handling for dates
+      let dbValue = value;
+      if (field === 'birthDate' && value) {
+        dbValue = value; // Database will handle the date format
+      }
+      
       // If we don't have an employee record yet, create one
       if (!employee) {
         console.log("No employee record found, creating one...");
-        const { data: newEmployee, error: createError } = await supabase
+        
+        const newEmployee: any = {
+          user_id: user.id,
+          name: field === 'name' ? value : '',
+          position: field === 'position' ? value : '',
+          department: field === 'department' ? value : '',
+          phone: field === 'phone' ? value : '',
+          avatar: field === 'avatar' ? value : '',
+          whatsapp: field === 'whatsapp' ? value : '',
+          telegram: field === 'telegram' ? value : '',
+          email: user.email
+        };
+        
+        if (field === 'birthDate') {
+          newEmployee.birth_date = dbValue;
+        }
+        
+        const { data: newEmployeeData, error: createError } = await supabase
           .from('employees')
-          .insert([{
-            user_id: user.id,
-            name: field === 'name' ? value : '',
-            position: field === 'position' ? value : '',
-            department: field === 'department' ? value : '',
-            phone: field === 'phone' ? value : '',
-            avatar: field === 'avatar' ? value : '',
-            whatsapp: field === 'whatsapp' ? value : '',
-            telegram: field === 'telegram' ? value : '',
-            email: user.email
-          }])
+          .insert([newEmployee])
           .select();
           
         if (createError) throw createError;
         
-        setEmployee(newEmployee?.[0] || null);
-        console.log("New employee record created:", newEmployee?.[0]);
+        setEmployee(newEmployeeData?.[0] || null);
+        console.log("New employee record created:", newEmployeeData?.[0]);
       } else {
         // Update existing employee record
         const { error } = await supabase
           .from('employees')
           .update({
-            [field]: value,
+            [dbField]: dbValue,
           })
           .eq('user_id', user.id);
 
@@ -152,7 +175,7 @@ const ProfilePage = () => {
         }
         
         // Update local state to reflect the change
-        setEmployee(prev => prev ? { ...prev, [field]: value } : null);
+        setEmployee(prev => prev ? { ...prev, [dbField]: dbValue } : null);
       }
 
       toast({
@@ -272,6 +295,30 @@ const ProfilePage = () => {
                                 saveField('department', e.target.value);
                               }}
                             />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="birthDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Дата рождения</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input 
+                                type="date" 
+                                className="pl-10" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  saveField('birthDate', e.target.value);
+                                }}
+                              />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
