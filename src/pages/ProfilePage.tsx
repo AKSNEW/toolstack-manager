@@ -22,6 +22,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Loader2, MessageCircle, Phone } from "lucide-react";
 
+// Define interface for employee data with birth_date
+interface EmployeeData {
+  id: string;
+  name: string;
+  position: string;
+  department: string;
+  phone: string;
+  avatar: string;
+  email: string;
+  whatsapp?: string;
+  telegram?: string;
+  user_id?: string;
+  birth_date?: string;
+  created_at?: string;
+}
+
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
   position: z.string().min(2, { message: "Должность обязательна" }),
@@ -39,7 +55,7 @@ const ProfilePage = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [employee, setEmployee] = useState<any>(null);
+  const [employee, setEmployee] = useState<EmployeeData | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
