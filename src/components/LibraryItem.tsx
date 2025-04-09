@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { employees } from '@/lib/data/employees';
 import { LibraryItem as LibraryItemType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { downloadLibraryFile } from '@/services/libraryService';
 
 interface LibraryItemProps {
   item: LibraryItemType;
@@ -50,10 +51,22 @@ const LibraryItem: React.FC<LibraryItemProps> = ({ item }) => {
   };
   
   const handleDownload = () => {
-    toast({
-      title: "Скачивание начато",
-      description: `Файл "${item.name}" скачивается`,
-    });
+    if (item.fileUrl) {
+      toast({
+        title: "Скачивание начато",
+        description: `Файл "${item.name}" скачивается`,
+      });
+      
+      downloadLibraryFile(item.fileUrl)
+        .catch(error => {
+          console.error("Download error:", error);
+          toast({
+            title: "Ошибка скачивания",
+            description: "Не удалось скачать файл",
+            variant: "destructive"
+          });
+        });
+    }
   };
   
   const Icon = getIcon();
@@ -89,7 +102,9 @@ const LibraryItem: React.FC<LibraryItemProps> = ({ item }) => {
             {authorDetails?.avatar && <AvatarImage src={authorDetails.avatar} alt={authorDetails.name} />}
             <AvatarFallback>{authorDetails ? getInitials(authorDetails.name) : '??'}</AvatarFallback>
           </Avatar>
-          <span className="text-xs text-muted-foreground">{authorDetails?.name || 'Неизвестный пользователь'}</span>
+          <span className="text-xs text-muted-foreground">
+            {(item as any).authorName || authorDetails?.name || 'Неизвестный пользователь'}
+          </span>
         </div>
       </CardContent>
       <CardFooter className="flex justify-end space-x-2 pt-0">

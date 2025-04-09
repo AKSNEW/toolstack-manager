@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { ClipboardList } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Site } from '@/lib/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import AddSiteForm from '@/components/AddSiteForm';
 import SiteDefectsJournal from '@/components/SiteDefectsJournal';
+import AddSiteForm from '@/components/AddSiteForm';
+import SiteDetails from './SiteDetails';
 
 interface SiteDialogsProps {
   isAddDialogOpen: boolean;
@@ -23,40 +23,39 @@ const SiteDialogs: React.FC<SiteDialogsProps> = ({
   setIsDefectJournalOpen,
   selectedSite,
   setSelectedSite,
-  onAddSuccess
+  onAddSuccess,
 }) => {
   return (
     <>
+      {/* Site Details Dialog */}
+      <Dialog
+        open={selectedSite !== null && !isDefectJournalOpen}
+        onOpenChange={(open) => {
+          if (!open) setSelectedSite(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          {selectedSite && <SiteDetails site={selectedSite} />}
+        </DialogContent>
+      </Dialog>
+      
       {/* Add Site Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+      >
         <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Добавить новый объект</DialogTitle>
-          </DialogHeader>
           <AddSiteForm onSuccess={onAddSuccess} />
         </DialogContent>
       </Dialog>
       
-      {/* Defects Journal Dialog */}
-      <Dialog 
-        open={isDefectJournalOpen} 
-        onOpenChange={(open) => {
-          setIsDefectJournalOpen(open);
-          if (!open) setSelectedSite(null);
-        }}
+      {/* Defect Journal Dialog */}
+      <Dialog
+        open={isDefectJournalOpen}
+        onOpenChange={setIsDefectJournalOpen}
       >
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5" />
-              Журнал неисправностей
-              {selectedSite && <span className="text-muted-foreground ml-2">— {selectedSite.name}</span>}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedSite && (
-            <SiteDefectsJournal siteId={selectedSite.id} siteName={selectedSite.name} />
-          )}
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          {selectedSite && <SiteDefectsJournal site={selectedSite} />}
         </DialogContent>
       </Dialog>
     </>

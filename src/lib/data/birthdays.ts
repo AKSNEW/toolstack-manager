@@ -1,41 +1,100 @@
 
-import { Employee } from '../types';
-import { employees } from './employees';
+import { supabase } from '@/integrations/supabase/client';
+import { Employee } from '@/lib/types';
 
-// Функция для получения ближайших дней рождения сотрудников
-export const getUpcomingBirthdays = () => {
-  const today = new Date();
+// Get upcoming birthdays from database
+export async function fetchBirthdays(): Promise<Employee[]> {
+  try {
+    // Get current date components
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1; // JavaScript months are 0-indexed
+    const currentDay = today.getDate();
+    
+    // Query employees with birthdays in the next 30 days
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .not('birth_date', 'is', null) as any;
+    
+    if (error) {
+      console.error('Error fetching birthdays:', error);
+      return [];
+    }
+    
+    if (!data || data.length === 0) {
+      return [];
+    }
+    
+    // Filter and sort employees by upcoming birthdays
+    const employeesWithBirthdays = data
+      .filter((emp: any) => emp.birth_date)
+      .map((emp: any) => {
+        const birthDate = new Date(emp.birth_date);
+        const birthMonth = birthDate.getMonth() + 1;
+        const birthDay = birthDate.getDate();
+        
+        // Calculate days until next birthday
+        let daysUntilBirthday;
+        if (birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)) {
+          // Birthday is later this year
+          const nextBirthday = new Date(today.getFullYear(), birthMonth - 1, birthDay);
+          daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        } else {
+          // Birthday is next year
+          const nextBirthday = new Date(today.getFullYear() + 1, birthMonth - 1, birthDay);
+          daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        }
+        
+        return {
+          ...emp,
+          birthDate: emp.birth_date,
+          daysUntilBirthday
+        };
+      })
+      .filter((emp: any) => emp.daysUntilBirthday <= 30) // Only show birthdays in the next 30 days
+      .sort((a: any, b: any) => a.daysUntilBirthday - b.daysUntilBirthday);
+    
+    return employeesWithBirthdays;
+  } catch (error) {
+    console.error('Error in fetchBirthdays:', error);
+    return [];
+  }
+}
+
+// Get upcoming birthdays (fallback for mock data)
+export function getUpcomingBirthdays(): Employee[] {
+  const employees = require('./employees').employees;
   
-  // Создаем массив сотрудников с датами предстоящих дней рождения в этом году
-  const employeesWithUpcomingBirthdays = employees
-    .filter(employee => employee.birthDate)
-    .map(employee => {
-      const birthDate = new Date(employee.birthDate!);
-      const thisYearBirthday = new Date(
-        today.getFullYear(),
-        birthDate.getMonth(),
-        birthDate.getDate()
-      );
+  // Get today's date
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentDay = today.getDate();
+  
+  // Filter employees who have birthdays in the next 30 days
+  return employees
+    .filter(emp => emp.birthDate)
+    .map(emp => {
+      const birthDate = new Date(emp.birthDate as string);
+      const birthMonth = birthDate.getMonth();
+      const birthDay = birthDate.getDate();
       
-      // Если день рождения уже прошел в этом году, рассчитываем дату на следующий год
-      if (thisYearBirthday < today) {
-        thisYearBirthday.setFullYear(today.getFullYear() + 1);
+      // Calculate days until next birthday
+      let daysUntilBirthday;
+      if (birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)) {
+        // Birthday is later this year
+        const nextBirthday = new Date(today.getFullYear(), birthMonth, birthDay);
+        daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      } else {
+        // Birthday is next year
+        const nextBirthday = new Date(today.getFullYear() + 1, birthMonth, birthDay);
+        daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       }
       
-      const daysUntil = Math.ceil(
-        (thisYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      
       return {
-        ...employee,
-        upcomingBirthday: thisYearBirthday,
-        daysUntil
+        ...emp,
+        daysUntilBirthday
       };
     })
-    // Сортируем по близости даты дня рождения
-    .sort((a, b) => a.daysUntil - b.daysUntil)
-    // Берем только ближайшие 3 дня рождения
-    .slice(0, 3);
-    
-  return employeesWithUpcomingBirthdays;
-};
+    .filter(emp => emp.daysUntilBirthday <= 30)
+    .sort((a, b) => a.daysUntilBirthday - b.daysUntilBirthday);
+}

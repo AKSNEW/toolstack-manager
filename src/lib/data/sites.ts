@@ -29,10 +29,9 @@ export let sites: Site[] = [...initialSites];
 // Function to fetch sites from database
 export async function fetchSites(): Promise<Site[]> {
   try {
-    // Use any type to bypass TypeScript checks until the types are properly generated
     const { data, error } = await supabase
-      .from('sites' as any)
-      .select('*');
+      .from('sites')
+      .select('*') as any;
     
     if (error) {
       console.error('Error fetching sites:', error);
@@ -61,9 +60,9 @@ export async function createSite(site: Omit<Site, 'id'>): Promise<Site | null> {
     const siteData = adaptSiteForInsert(site);
     
     const { data, error } = await supabase
-      .from('sites' as any)
+      .from('sites')
       .insert(siteData as any)
-      .select();
+      .select() as any;
     
     if (error) {
       console.error('Error creating site:', error);
@@ -90,10 +89,10 @@ export async function updateSite(id: string, siteUpdate: Partial<Site>): Promise
     const updates = adaptSiteToDB(siteUpdate);
     
     const { data, error } = await supabase
-      .from('sites' as any)
+      .from('sites')
       .update(updates as any)
       .eq('id', id)
-      .select();
+      .select() as any;
     
     if (error) {
       console.error('Error updating site:', error);
@@ -121,9 +120,9 @@ export async function updateSite(id: string, siteUpdate: Partial<Site>): Promise
 export async function deleteSite(id: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('sites' as any)
+      .from('sites')
       .delete()
-      .eq('id', id);
+      .eq('id', id) as any;
     
     if (error) {
       console.error('Error deleting site:', error);
@@ -146,7 +145,7 @@ async function seedInitialSites() {
     for (const site of initialSites) {
       // Create each initial site in the database
       await supabase
-        .from('sites' as any)
+        .from('sites')
         .insert({
           name: site.name,
           address: site.address,
@@ -158,7 +157,7 @@ async function seedInitialSites() {
     }
     
     // Refetch sites after seeding
-    const { data } = await supabase.from('sites' as any).select('*');
+    const { data } = await supabase.from('sites').select('*') as any;
     if (data) {
       sites = data.map(site => adaptSiteFromDB(site as any));
     }
