@@ -1,10 +1,9 @@
 
 import { UnionMessage } from "./types";
-import { Database } from "@/integrations/supabase/types";
 
 // Type aliases for database rows
 // Since the 'union_messages' table doesn't exist in the generated types yet, we'll create compatible types
-interface UnionMessageRow {
+export interface UnionMessageRow {
   id: string;
   content: string;
   created_at: string;
@@ -16,7 +15,7 @@ interface UnionMessageRow {
   updated_at?: string;
 }
 
-interface UnionMessageInsert {
+export interface UnionMessageInsert {
   content: string;
   created_at: string;
   author_id: string;
