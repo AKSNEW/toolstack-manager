@@ -1,47 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { dashboardStats, tools } from '@/lib/data';
-import { fetchBirthdays, birthdayConfig } from '@/lib/data/birthdays';
-import { fetchTodos } from '@/lib/data/todos';
-import { fetchSites } from '@/lib/data/sites';
-import { Package, Users, Clock, AlertTriangle, Check, Gift, ChevronDown, List, Wrench } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import BirthdayCard from './BirthdayCard';
+// Импортируем необходимые библиотеки и компоненты
+import React, { useState, useEffect } from 'react'; // Основные хуки React
+import { dashboardStats, tools } from '@/lib/data'; // Данные для дашборда и инструментов
+import { fetchBirthdays, birthdayConfig } from '@/lib/data/birthdays'; // Функции и конфигурации для работы с днями рождения
+import { fetchTodos } from '@/lib/data/todos'; // Функция для получения задач
+import { fetchSites } from '@/lib/data/sites'; // Функция для получения объектов
+import { Package, Users, Clock, AlertTriangle, Check, Gift, ChevronDown, List, Wrench } from 'lucide-react'; // Иконки
+import { cn } from '@/lib/utils'; // Утилитарная функция для работы с классами
+import BirthdayCard from './BirthdayCard'; // Компонент для отображения дней рождения
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Employee, Site, Todo } from '@/lib/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from '@/components/ui/dropdown-menu'; // Компоненты для выпадающего меню
+import { Employee, Site, Todo } from '@/lib/types'; // Типы данных
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Компоненты для аватаров
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "@/components/ui/collapsible"; // Компоненты для сворачиваемого контента
 
+// Основной компонент Dashboard
 const Dashboard: React.FC = () => {
-  const [isBirthdayOpen, setIsBirthdayOpen] = useState(false);
-  const [isToolsOpen, setIsToolsOpen] = useState(false);
-  const [upcomingBirthdays, setUpcomingBirthdays] = useState<Array<Employee & { upcomingBirthday: Date; daysUntil: number }>>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
-  const [recentTodos, setRecentTodos] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Состояния для управления видимостью и данными
+  const [isBirthdayOpen, setIsBirthdayOpen] = useState(false); // Состояние для выпадающего списка дней рождения
+  const [isToolsOpen, setIsToolsOpen] = useState(false); // Состояние для сворачиваемого списка инструментов
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState<Array<Employee & { upcomingBirthday: Date; daysUntil: number }>>([]); // Список предстоящих дней рождения
+  const [recentActivity, setRecentActivity] = useState<any[]>([]); // Список недавней активности
+  const [recentTodos, setRecentTodos] = useState<any[]>([]); // Список недавних задач
+  const [isLoading, setIsLoading] = useState(true); // Состояние загрузки данных
 
+  // useEffect для загрузки данных при монтировании компонента
   useEffect(() => {
     const loadDashboardData = async () => {
-      setIsLoading(true);
+      setIsLoading(true); // Устанавливаем состояние загрузки в true
       try {
-        // Load birthdays from database
+        // Загружаем данные о днях рождения
         const birthdays = await fetchBirthdays(birthdayConfig.showCount);
         setUpcomingBirthdays(birthdays);
 
-        // Load recent site activity
+        // Загружаем данные о недавних объектах
         const sites = await fetchSites();
-        
-        // Load recent todos
+
+        // Загружаем данные о недавних задачах
         const todos = await fetchTodos();
-        
-        // Combine recent activities
+
+        // Объединяем данные о недавних объектах и задачах
         const combinedActivity = [
           ...sites.map(site => ({
             type: 'site',
@@ -63,24 +67,24 @@ const Dashboard: React.FC = () => {
             assigneeAvatar: (todo as any).assigneeAvatar,
           }))
         ]
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 10);
-        
-        setRecentActivity(combinedActivity);
-        
-        // Filter todo activities
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Сортируем по дате
+        .slice(0, 10); // Оставляем только 10 последних элементов
+
+        setRecentActivity(combinedActivity); // Устанавливаем недавнюю активность
+
+        // Фильтруем задачи для отображения только последних 5
         setRecentTodos(combinedActivity.filter(item => item.type === 'todo').slice(0, 5));
 
-        // Load tool activities
+        // Загружаем данные о недавних действиях с инструментами
         const toolActivities = [...tools]
-          .filter(tool => tool.lastCheckedOut)
+          .filter(tool => tool.lastCheckedOut) // Фильтруем инструменты, которые были выданы
           .sort((a, b) => {
             if (!a.lastCheckedOut || !b.lastCheckedOut) return 0;
             return new Date(b.lastCheckedOut.date).getTime() - new Date(a.lastCheckedOut.date).getTime();
           })
-          .slice(0, 5);
+          .slice(0, 5); // Оставляем только 5 последних элементов
 
-        // Update recent activity with tool activities
+        // Обновляем недавнюю активность, добавляя действия с инструментами
         setRecentActivity(prevActivity => {
           const combined = [
             ...prevActivity,
@@ -92,21 +96,22 @@ const Dashboard: React.FC = () => {
               employeeId: tool?.lastCheckedOut?.employeeId
             }))
           ];
-          
+
           return combined
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .slice(0, 10);
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Сортируем по дате
+            .slice(0, 10); // Оставляем только 10 последних элементов
         });
       } catch (error) {
-        console.error("Error loading dashboard data:", error);
+        console.error("Error loading dashboard data:", error); // Ловим и логируем ошибки
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Устанавливаем состояние загрузки в false
       }
     };
-    
-    loadDashboardData();
-  }, []);
 
+    loadDashboardData(); // Вызываем функцию загрузки данных
+  }, []); // Пустой массив зависимостей означает, что useEffect выполнится только один раз при монтировании
+
+  // Карточки статистики для инструментов
   const toolStatCards = [
     {
       title: 'Всего инструментов',
@@ -134,6 +139,7 @@ const Dashboard: React.FC = () => {
     },
   ];
 
+  // Карточки статистики для других данных
   const otherStatCards = [
     {
       title: 'Всего сотрудников',
@@ -149,6 +155,7 @@ const Dashboard: React.FC = () => {
     },
   ];
 
+  // Функция для получения имени сотрудника по ID
   const getEmployeeName = (id: string) => {
     try {
       const employee = require('./data/employees').employees.find((emp: any) => emp.id === id);
@@ -157,16 +164,18 @@ const Dashboard: React.FC = () => {
       return 'Unknown';
     }
   };
-  
+
+  // Функция для форматирования даты
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ru-RU', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return new Intl.DateTimeFormat('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     }).format(date);
   };
 
+  // Функция для получения метки активности
   const getActivityLabel = (activity: any) => {
     if (activity.type === 'site') {
       if (activity.status === 'planning') return 'Новый объект в планировании';
@@ -174,27 +183,29 @@ const Dashboard: React.FC = () => {
       if (activity.status === 'completed') return 'Объект завершен';
       return 'Обновление объекта';
     }
-    
+
     if (activity.type === 'todo') {
       if (activity.status === 'pending') return 'Новая задача создана';
       if (activity.status === 'in-progress') return 'Задача в работе';
       if (activity.status === 'completed') return 'Задача завершена';
       return 'Обновление задачи';
     }
-    
+
     if (activity.type === 'tool') {
       return 'Выдача инструмента';
     }
-    
+
     return 'Активность';
   };
 
+  // Функция для получения иконки активности
   const getActivityIcon = (activity: any) => {
     if (activity.type === 'todo') return List;
     if (activity.type === 'site') return Package;
     return Package;
   };
 
+  // Функция для получения цвета активности
   const getActivityColor = (activity: any) => {
     if (activity.type === 'site') return 'bg-blue-50 text-blue-600';
     if (activity.type === 'todo') {
@@ -206,6 +217,7 @@ const Dashboard: React.FC = () => {
     return 'bg-primary/10 text-primary';
   };
 
+  // Функция для получения инициалов имени
   const getInitials = (name: string) => {
     if (!name) return '??';
     return name
@@ -216,9 +228,10 @@ const Dashboard: React.FC = () => {
       .substring(0, 2);
   };
 
+  // Возвращаем JSX для рендеринга компонента
   return (
     <div className="space-y-8">
-      {/* Дни рождения как выпадающий список */}
+      {/* Секция для дней рождения */}
       <div className="glass rounded-xl overflow-hidden">
         <DropdownMenu open={isBirthdayOpen} onOpenChange={setIsBirthdayOpen}>
           <DropdownMenuTrigger asChild>
@@ -246,7 +259,7 @@ const Dashboard: React.FC = () => {
         </DropdownMenu>
       </div>
 
-      {/* Инструменты как сворачиваемый список */}
+      {/* Секция для инструментов */}
       <Collapsible
         open={isToolsOpen}
         onOpenChange={setIsToolsOpen}
@@ -269,7 +282,7 @@ const Dashboard: React.FC = () => {
         <CollapsibleContent>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {toolStatCards.map((stat, index) => (
-              <div 
+              <div
                 key={index}
                 className="glass rounded-xl p-6 transition-all card-hover"
               >
@@ -288,9 +301,10 @@ const Dashboard: React.FC = () => {
         </CollapsibleContent>
       </Collapsible>
 
+      {/* Секция для других статистик */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {otherStatCards.map((stat, index) => (
-          <div 
+          <div
             key={index}
             className="glass rounded-xl p-6 transition-all card-hover"
           >
@@ -307,6 +321,7 @@ const Dashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Секция для недавней активности */}
       <div className="glass rounded-xl overflow-hidden">
         <div className="px-6 py-5 border-b border-border">
           <h2 className="text-lg font-semibold">Недавняя активность</h2>
@@ -359,6 +374,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Секция для задач */}
       <div className="glass rounded-xl overflow-hidden">
         <div className="px-6 py-5 border-b border-border flex items-center justify-between">
           <div>
@@ -375,8 +391,8 @@ const Dashboard: React.FC = () => {
               <div key={todo.id} className="px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className={`w-2 h-2 rounded-full ${
-                    todo.status === 'completed' ? 'bg-green-500' : 
-                    todo.status === 'in-progress' ? 'bg-amber-500' : 
+                    todo.status === 'completed' ? 'bg-green-500' :
+                    todo.status === 'in-progress' ? 'bg-amber-500' :
                     'bg-red-500'
                   }`}></div>
                   <div>
@@ -393,12 +409,12 @@ const Dashboard: React.FC = () => {
                       <AvatarFallback>{getInitials(todo.assigneeName)}</AvatarFallback>
                     </Avatar>
                   )}
-                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-opacity-10 
-                    ${todo.status === 'completed' ? 'bg-green-100 text-green-600' : 
-                    todo.status === 'in-progress' ? 'bg-amber-100 text-amber-600' : 
+                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-opacity-10
+                    ${todo.status === 'completed' ? 'bg-green-100 text-green-600' :
+                    todo.status === 'in-progress' ? 'bg-amber-100 text-amber-600' :
                     'bg-blue-100 text-blue-600'}">
-                    {todo.status === 'completed' ? 'Завершена' : 
-                     todo.status === 'in-progress' ? 'В работе' : 
+                    {todo.status === 'completed' ? 'Завершена' :
+                     todo.status === 'in-progress' ? 'В работе' :
                      'Ожидает'}
                   </span>
                 </div>
