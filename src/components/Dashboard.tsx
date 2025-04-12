@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { dashboardStats, tools } from '@/lib/data';
 import { fetchBirthdays, birthdayConfig } from '@/lib/data/birthdays';
 import { fetchTodos } from '@/lib/data/todos';
 import { fetchSites } from '@/lib/data/sites';
-import { Package, Users, Clock, AlertTriangle, Check, Gift, ChevronDown, List, Tool } from 'lucide-react';
+import { Package, Users, Clock, AlertTriangle, Check, Gift, ChevronDown, List, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BirthdayCard from './BirthdayCard';
 import {
@@ -261,7 +260,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-                <Tool className="h-5 w-5" />
+                <Wrench className="h-5 w-5" />
               </div>
               <ChevronDown className={`h-4 w-4 transition-transform ${isToolsOpen ? 'rotate-180' : ''}`} />
             </div>

@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { LibraryItem } from "@/lib/types";
-import { adaptLibraryItemFromDB, adaptLibraryItemForInsert, adaptLibraryItemToDB } from "@/lib/supabase-library-adapters";
+import { adaptLibraryItemFromDB, adaptLibraryItemForInsert, adaptLibraryItemForUpdate } from "@/lib/supabase-library-adapters";
 
 // Fetch all library items
 export async function fetchLibraryItems(): Promise<LibraryItem[]> {
@@ -48,7 +48,7 @@ export async function updateLibraryItem(id: string, item: Partial<LibraryItem>):
   // Using a generic query approach to bypass TypeScript type constraints
   const { error } = await supabase
     .from('library_items' as any)
-    .update(adaptLibraryItemToDB(item) as any)
+    .update(adaptLibraryItemForUpdate(item) as any)
     .eq('id', id) as any;
   
   if (error) {

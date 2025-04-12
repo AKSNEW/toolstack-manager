@@ -1,5 +1,5 @@
 
-import { LibraryItem } from "../types";
+import { LibraryItem } from "@/lib/types";
 
 // Convert database library row to app LibraryItem type
 export function adaptLibraryItemFromDB(item: any): LibraryItem {
