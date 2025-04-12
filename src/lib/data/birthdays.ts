@@ -1,61 +1,81 @@
 
+import { Employee } from '../types';
 import { supabase } from '@/integrations/supabase/client';
-import { Employee } from '@/lib/types';
+import { employees as localEmployees } from './employees';
 
-// Get upcoming birthdays from database
-export async function fetchBirthdays(): Promise<Array<Employee & { upcomingBirthday: Date; daysUntil: number }>> {
+const getNextBirthday = (birthDate: string | null): { upcomingBirthday: Date, daysUntil: number } | null => {
+  if (!birthDate) return null;
+  
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  
+  // Parse the birth date
+  const [year, month, day] = birthDate.split('-').map(Number);
+  
+  // Create date for this year's birthday
+  const thisYearBirthday = new Date(currentYear, month - 1, day);
+  
+  // Create date for next year's birthday
+  const nextYearBirthday = new Date(currentYear + 1, month - 1, day);
+  
+  // Determine which birthday to use (this year if not passed, next year if passed)
+  const upcomingBirthday = thisYearBirthday < today ? nextYearBirthday : thisYearBirthday;
+  
+  // Calculate days until next birthday
+  const timeDiff = upcomingBirthday.getTime() - today.getTime();
+  const daysUntil = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  
+  return { upcomingBirthday, daysUntil };
+};
+
+// Get employee's zodiac sign
+export const getZodiacSign = (date: Date | null): string => {
+  if (!date) return '';
+  
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Овен';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'Телец';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'Близнецы';
+  if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return 'Рак';
+  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return 'Лев';
+  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return 'Дева';
+  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return 'Весы';
+  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return 'Скорпион';
+  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return 'Стрелец';
+  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return 'Козерог';
+  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return 'Водолей';
+  return 'Рыбы';
+};
+
+export async function fetchBirthdays(limit: number = 5): Promise<Array<Employee & { upcomingBirthday: Date; daysUntil: number }>> {
   try {
-    // Get current date components
-    const today = new Date();
-    const currentMonth = today.getMonth() + 1; // JavaScript months are 0-indexed
-    const currentDay = today.getDate();
-    
-    // Query employees with birthdays in the next 30 days
+    // Attempt to fetch from the database
     const { data, error } = await supabase
-      .from('employees')
+      .from('employees' as any)
       .select('*')
       .not('birth_date', 'is', null) as any;
     
     if (error) {
-      console.error('Error fetching birthdays:', error);
-      return getUpcomingBirthdays(); // Fall back to mock data on error
+      console.error('Error fetching birthdays from database:', error);
+      // Fall back to local data
+      return getUpcomingBirthdaysFromLocal(limit);
     }
     
     if (!data || data.length === 0) {
-      return getUpcomingBirthdays(); // Fall back to mock data if no results
+      // No data in database or no employees with birthdays
+      return getUpcomingBirthdaysFromLocal(limit);
     }
     
-    // Filter and sort employees by upcoming birthdays
     const employeesWithBirthdays = data
-      .filter((emp: any) => emp.birth_date)
       .map((emp: any) => {
-        const birthDate = new Date(emp.birth_date);
-        const birthMonth = birthDate.getMonth() + 1;
-        const birthDay = birthDate.getDate();
+        const birthDate = emp.birth_date;
+        const nextBirthday = getNextBirthday(birthDate);
         
-        // Calculate days until next birthday
-        let daysUntilBirthday;
-        if (birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)) {
-          // Birthday is later this year
-          const nextBirthday = new Date(today.getFullYear(), birthMonth - 1, birthDay);
-          daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        } else {
-          // Birthday is next year
-          const nextBirthday = new Date(today.getFullYear() + 1, birthMonth - 1, birthDay);
-          daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        }
-
-        // Create the upcoming birthday date object
-        const upcomingBirthday = new Date(
-          birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)
-            ? today.getFullYear()
-            : today.getFullYear() + 1,
-          birthMonth - 1,
-          birthDay
-        );
+        if (!nextBirthday) return null;
         
         return {
-          ...emp,
           id: emp.id,
           name: emp.name,
           position: emp.position,
@@ -64,64 +84,39 @@ export async function fetchBirthdays(): Promise<Array<Employee & { upcomingBirth
           phone: emp.phone,
           avatar: emp.avatar,
           birthDate: emp.birth_date,
-          upcomingBirthday,
-          daysUntil: daysUntilBirthday
+          ...nextBirthday
         };
       })
-      .filter((emp: any) => emp.daysUntil <= 30) // Only show birthdays in the next 30 days
+      .filter(Boolean)
       .sort((a: any, b: any) => a.daysUntil - b.daysUntil);
     
-    return employeesWithBirthdays;
+    return employeesWithBirthdays.slice(0, limit);
   } catch (error) {
     console.error('Error in fetchBirthdays:', error);
-    return getUpcomingBirthdays(); // Fall back to mock data on error
+    return getUpcomingBirthdaysFromLocal(limit);
   }
 }
 
-// Get upcoming birthdays (fallback for mock data)
-export function getUpcomingBirthdays(): Array<Employee & { upcomingBirthday: Date; daysUntil: number }> {
-  const employees = require('./employees').employees;
-  
-  // Get today's date
-  const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentDay = today.getDate();
-  
-  // Filter employees who have birthdays in the next 30 days
-  return employees
-    .filter(emp => emp.birthDate)
+function getUpcomingBirthdaysFromLocal(limit: number = 5): Array<Employee & { upcomingBirthday: Date; daysUntil: number }> {
+  // Use the local employees data as fallback
+  return localEmployees
     .map(emp => {
-      const birthDate = new Date(emp.birthDate as string);
-      const birthMonth = birthDate.getMonth();
-      const birthDay = birthDate.getDate();
+      const nextBirthday = getNextBirthday(emp.birthDate || null);
       
-      // Calculate days until next birthday
-      let daysUntilBirthday;
-      if (birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)) {
-        // Birthday is later this year
-        const nextBirthday = new Date(today.getFullYear(), birthMonth, birthDay);
-        daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      } else {
-        // Birthday is next year
-        const nextBirthday = new Date(today.getFullYear() + 1, birthMonth, birthDay);
-        daysUntilBirthday = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      }
-
-      // Create the upcoming birthday date object
-      const upcomingBirthday = new Date(
-        birthMonth > currentMonth || (birthMonth === currentMonth && birthDay >= currentDay)
-          ? today.getFullYear()
-          : today.getFullYear() + 1,
-        birthMonth,
-        birthDay
-      );
+      if (!nextBirthday) return null;
       
       return {
         ...emp,
-        upcomingBirthday,
-        daysUntil: daysUntilBirthday
+        ...nextBirthday
       };
     })
-    .filter(emp => emp.daysUntil <= 30)
-    .sort((a, b) => a.daysUntil - b.daysUntil);
+    .filter(Boolean)
+    .sort((a, b) => a!.daysUntil - b!.daysUntil)
+    .slice(0, limit);
 }
+
+// For demonstration, we'll also export a config for the birthdays visibility setting
+export const birthdayConfig = {
+  notificationDaysInAdvance: 7,
+  showCount: 5
+};

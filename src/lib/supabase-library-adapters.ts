@@ -1,79 +1,48 @@
 
-import { LibraryItem } from "./types";
-import { Database } from "@/integrations/supabase/types";
+import { LibraryItem } from "../types";
 
-// Type aliases for database rows
-// Since the 'library_items' table doesn't exist in the generated types yet, we'll create compatible types
-interface LibraryItemRow {
-  id: string;
-  name: string;
-  type: string;
-  author?: string;
-  year?: string;
-  description: string;
-  external_link?: string;
-  file_url?: string;
-  author_id: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-interface LibraryItemInsert {
-  name: string;
-  type: string;
-  author?: string;
-  year?: string;
-  description: string;
-  external_link?: string;
-  file_url?: string;
-  author_id: string;
-  created_at: string;
-}
-
-// Convert database library item row to app LibraryItem type
-export function adaptLibraryItemFromDB(item: LibraryItemRow): LibraryItem {
+// Convert database library row to app LibraryItem type
+export function adaptLibraryItemFromDB(item: any): LibraryItem {
   return {
     id: item.id,
     name: item.name,
-    type: item.type as 'book' | 'instruction' | 'standard',
-    author: item.author,
-    year: item.year,
+    type: item.type,
     description: item.description,
-    externalLink: item.external_link,
-    fileUrl: item.file_url,
-    authorId: item.author_id,
-    createdAt: item.created_at
+    author: item.author || '',
+    authorId: item.author_id || '',
+    authorName: item.employees?.name || '',
+    fileUrl: item.file_url || '',
+    externalLink: item.external_link || '',
+    year: item.year || '',
   };
 }
 
 // Convert app LibraryItem type to database format for new inserts
-export function adaptLibraryItemForInsert(item: Omit<LibraryItem, 'id'>): LibraryItemInsert {
+export function adaptLibraryItemForInsert(item: Omit<LibraryItem, 'id'>): any {
   return {
     name: item.name,
     type: item.type,
-    author: item.author,
-    year: item.year,
     description: item.description,
-    external_link: item.externalLink,
-    file_url: item.fileUrl,
-    author_id: item.authorId,
-    created_at: item.createdAt
+    author: item.author || '',
+    author_id: item.authorId || '',
+    file_url: item.fileUrl || '',
+    external_link: item.externalLink || '',
+    year: item.year || '',
   };
 }
 
 // Convert app LibraryItem type to database format for updates
-export function adaptLibraryItemToDB(item: Partial<LibraryItem>): Partial<LibraryItemRow> {
-  const result: Partial<LibraryItemRow> = {};
+export function adaptLibraryItemForUpdate(item: Partial<LibraryItem>): any {
+  const result: any = {};
   
   if ('name' in item) result.name = item.name;
   if ('type' in item) result.type = item.type;
-  if ('author' in item) result.author = item.author;
-  if ('year' in item) result.year = item.year;
   if ('description' in item) result.description = item.description;
-  if ('externalLink' in item) result.external_link = item.externalLink;
-  if ('fileUrl' in item) result.file_url = item.fileUrl;
+  if ('author' in item) result.author = item.author;
   if ('authorId' in item) result.author_id = item.authorId;
-  if ('createdAt' in item) result.created_at = item.createdAt;
+  if ('fileUrl' in item) result.file_url = item.fileUrl;
+  if ('externalLink' in item) result.external_link = item.externalLink;
+  if ('year' in item) result.year = item.year;
   
   return result;
 }

@@ -5,14 +5,18 @@ import TodoList from '@/components/todos/TodoList';
 import AddTodoForm from '@/components/todos/AddTodoForm';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import { Input } from '@/components/ui/input';
+import { createTodo } from '@/lib/data/todos';
 
 const TodosPage = () => {
   const [todos, setTodos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [quickTaskTitle, setQuickTaskTitle] = useState('');
+  const [isAddingQuickTask, setIsAddingQuickTask] = useState(false);
   const { user } = useAuth();
 
   const loadTodos = async () => {
@@ -31,6 +35,36 @@ const TodosPage = () => {
   useEffect(() => {
     loadTodos();
   }, []);
+
+  const handleQuickAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!quickTaskTitle.trim()) return;
+    
+    setIsAddingQuickTask(true);
+    
+    try {
+      const newTodo = await createTodo({
+        title: quickTaskTitle,
+        description: '',
+        status: 'pending',
+        createdBy: user?.id || ''
+      });
+      
+      if (newTodo) {
+        toast.success('Задача создана');
+        setQuickTaskTitle('');
+        await loadTodos();
+      } else {
+        toast.error('Не удалось создать задачу');
+      }
+    } catch (error) {
+      console.error('Error creating quick task:', error);
+      toast.error('Не удалось создать задачу');
+    } finally {
+      setIsAddingQuickTask(false);
+    }
+  };
 
   const handleEdit = (todo: any) => {
     // Implement edit functionality if needed
@@ -78,9 +112,27 @@ const TodosPage = () => {
           <h1 className="text-3xl font-bold">Задачи</h1>
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Добавить задачу
+            Детальное создание
           </Button>
         </div>
+        
+        <form onSubmit={handleQuickAddTask} className="flex gap-2 mb-6">
+          <Input
+            placeholder="Введите название задачи и нажмите Enter для быстрого создания"
+            value={quickTaskTitle}
+            onChange={(e) => setQuickTaskTitle(e.target.value)}
+            className="flex-1"
+            disabled={isAddingQuickTask}
+          />
+          <Button type="submit" disabled={isAddingQuickTask || !quickTaskTitle.trim()}>
+            {isAddingQuickTask ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            <span className="sr-only">Добавить задачу</span>
+          </Button>
+        </form>
         
         {isLoading ? (
           <div className="flex justify-center py-8">

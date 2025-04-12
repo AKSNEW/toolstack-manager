@@ -20,32 +20,27 @@ const SitesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [localSites, setLocalSites] = useState<Site[]>([]);
 
+  const loadSites = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchSites();
+      setLocalSites(data);
+    } catch (error) {
+      console.error("Error loading sites:", error);
+      toast.error("Ошибка при загрузке объектов");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadSites = async () => {
-      setIsLoading(true);
-      try {
-        const data = await fetchSites();
-        setLocalSites(data);
-      } catch (error) {
-        console.error("Error loading sites:", error);
-        toast.error("Ошибка при загрузке объектов");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     loadSites();
   }, []);
 
   // Refresh sites when a new one is added
   const handleAddSuccess = async () => {
     setIsAddDialogOpen(false);
-    try {
-      const data = await fetchSites();
-      setLocalSites(data);
-    } catch (error) {
-      console.error("Error refreshing sites:", error);
-    }
+    await loadSites();
   };
 
   // Filter sites based on search and status
@@ -102,6 +97,7 @@ const SitesPage = () => {
           selectedSite={selectedSite}
           setSelectedSite={setSelectedSite}
           onAddSuccess={handleAddSuccess}
+          onDeleteSite={loadSites}
         />
       </div>
     </TransitionWrapper>

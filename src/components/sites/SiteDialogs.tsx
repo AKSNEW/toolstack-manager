@@ -14,6 +14,7 @@ interface SiteDialogsProps {
   selectedSite: Site | null;
   setSelectedSite: (site: Site | null) => void;
   onAddSuccess: () => void;
+  onDeleteSite?: () => void;
 }
 
 const SiteDialogs: React.FC<SiteDialogsProps> = ({
@@ -24,6 +25,7 @@ const SiteDialogs: React.FC<SiteDialogsProps> = ({
   selectedSite,
   setSelectedSite,
   onAddSuccess,
+  onDeleteSite,
 }) => {
   return (
     <>
@@ -35,7 +37,17 @@ const SiteDialogs: React.FC<SiteDialogsProps> = ({
         }}
       >
         <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
-          {selectedSite && <SiteDetails site={selectedSite} />}
+          {selectedSite && (
+            <SiteDetails 
+              site={selectedSite} 
+              onUpdate={onAddSuccess}
+              onDelete={() => {
+                setSelectedSite(null);
+                if (onDeleteSite) onDeleteSite();
+                onAddSuccess();
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
       

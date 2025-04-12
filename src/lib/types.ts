@@ -161,14 +161,14 @@ export interface ToolboxItem {
 export interface LibraryItem {
   id: string;
   name: string;
-  type: 'book' | 'instruction' | 'standard';
-  author?: string;
-  year?: string;
+  type: 'book' | 'standard' | 'instruction' | string;
   description: string;
-  externalLink?: string;
+  author?: string;
+  authorId?: string;
+  authorName?: string;
   fileUrl?: string;
-  authorId: string;
-  createdAt: string;
+  externalLink?: string;
+  year?: string;
 }
 
 export interface Defect {

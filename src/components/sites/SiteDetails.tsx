@@ -1,18 +1,37 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Site } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Home, Clock, Users, Info } from 'lucide-react';
+import { Calendar, Home, Clock, Users, Info, Edit } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { crews } from '@/lib/data/crews';
 import SiteTodos from './SiteTodos';
+import { Button } from '@/components/ui/button';
+import EditSiteForm from './EditSiteForm';
 
 interface SiteDetailsProps {
   site: Site;
+  onUpdate?: () => void;
+  onDelete?: () => void;
 }
 
-const SiteDetails: React.FC<SiteDetailsProps> = ({ site }) => {
+const SiteDetails: React.FC<SiteDetailsProps> = ({ site, onUpdate, onDelete }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  
+  if (isEditing) {
+    return (
+      <EditSiteForm 
+        site={site} 
+        onSuccess={() => {
+          setIsEditing(false);
+          if (onUpdate) onUpdate();
+        }}
+        onDelete={onDelete}
+      />
+    );
+  }
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'planning':
@@ -54,6 +73,10 @@ const SiteDetails: React.FC<SiteDetailsProps> = ({ site }) => {
             </Badge>
           </div>
         </div>
+        <Button onClick={() => setIsEditing(true)} variant="outline" className="flex items-center gap-2">
+          <Edit className="h-4 w-4" />
+          Редактировать
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

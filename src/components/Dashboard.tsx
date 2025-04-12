@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { dashboardStats, tools } from '@/lib/data';
-import { fetchBirthdays } from '@/lib/data/birthdays';
+import { fetchBirthdays, birthdayConfig } from '@/lib/data/birthdays';
 import { fetchTodos } from '@/lib/data/todos';
 import { fetchSites } from '@/lib/data/sites';
-import { Package, Users, Clock, AlertTriangle, Check, Gift, ChevronDown, List } from 'lucide-react';
+import { Package, Users, Clock, AlertTriangle, Check, Gift, ChevronDown, List, Tool } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BirthdayCard from './BirthdayCard';
 import {
@@ -13,9 +14,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Employee, Site, Todo } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const Dashboard: React.FC = () => {
   const [isBirthdayOpen, setIsBirthdayOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [upcomingBirthdays, setUpcomingBirthdays] = useState<Array<Employee & { upcomingBirthday: Date; daysUntil: number }>>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [recentTodos, setRecentTodos] = useState<any[]>([]);
@@ -26,7 +33,7 @@ const Dashboard: React.FC = () => {
       setIsLoading(true);
       try {
         // Load birthdays from database
-        const birthdays = await fetchBirthdays();
+        const birthdays = await fetchBirthdays(birthdayConfig.showCount);
         setUpcomingBirthdays(birthdays);
 
         // Load recent site activity
@@ -101,7 +108,7 @@ const Dashboard: React.FC = () => {
     loadDashboardData();
   }, []);
 
-  const statCards = [
+  const toolStatCards = [
     {
       title: 'Всего инструментов',
       value: dashboardStats.totalTools,
@@ -126,6 +133,9 @@ const Dashboard: React.FC = () => {
       icon: AlertTriangle,
       color: 'bg-red-50 text-red-600',
     },
+  ];
+
+  const otherStatCards = [
     {
       title: 'Всего сотрудников',
       value: dashboardStats.totalEmployees,
@@ -216,7 +226,12 @@ const Dashboard: React.FC = () => {
             <div className="px-6 py-5 border-b border-border flex items-center justify-between cursor-pointer hover:bg-accent/10 transition-colors">
               <div>
                 <h2 className="text-lg font-semibold">Дни рождения</h2>
-                <p className="text-sm text-muted-foreground">Ближайшие праздники</p>
+                <p className="text-sm text-muted-foreground">
+                  Ближайшие праздники ({upcomingBirthdays.length} сотрудников)
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Оповещения появляются за {birthdayConfig.notificationDaysInAdvance} дней
+                </p>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
@@ -232,8 +247,50 @@ const Dashboard: React.FC = () => {
         </DropdownMenu>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {statCards.map((stat, index) => (
+      {/* Инструменты как сворачиваемый список */}
+      <Collapsible
+        open={isToolsOpen}
+        onOpenChange={setIsToolsOpen}
+        className="glass rounded-xl overflow-hidden"
+      >
+        <CollapsibleTrigger asChild>
+          <div className="px-6 py-5 border-b border-border flex items-center justify-between cursor-pointer hover:bg-accent/10 transition-colors">
+            <div>
+              <h2 className="text-lg font-semibold">Инструменты</h2>
+              <p className="text-sm text-muted-foreground">Статистика по инструментам</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                <Tool className="h-5 w-5" />
+              </div>
+              <ChevronDown className={`h-4 w-4 transition-transform ${isToolsOpen ? 'rotate-180' : ''}`} />
+            </div>
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {toolStatCards.map((stat, index) => (
+              <div 
+                key={index}
+                className="glass rounded-xl p-6 transition-all card-hover"
+              >
+                <div className="flex items-center">
+                  <div className={cn("p-3 rounded-lg mr-4", stat.color)}>
+                    <stat.icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                    <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {otherStatCards.map((stat, index) => (
           <div 
             key={index}
             className="glass rounded-xl p-6 transition-all card-hover"
