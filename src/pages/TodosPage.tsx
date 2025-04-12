@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { fetchTodos } from '@/lib/data/todos';
+import { fetchTodos, updateTodo, deleteTodo, createTodo } from '@/lib/data/todos';
 import TodoList from '@/components/todos/TodoList';
 import AddTodoForm from '@/components/todos/AddTodoForm';
 import TransitionWrapper from '@/components/TransitionWrapper';
@@ -9,12 +9,13 @@ import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
-import { createTodo } from '@/lib/data/todos';
 
 const TodosPage = () => {
   const [todos, setTodos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [currentTodo, setCurrentTodo] = useState<any>(null);
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
   const [isAddingQuickTask, setIsAddingQuickTask] = useState(false);
   const { user } = useAuth();
@@ -67,13 +68,12 @@ const TodosPage = () => {
   };
 
   const handleEdit = (todo: any) => {
-    // Implement edit functionality if needed
-    console.log('Edit todo:', todo);
+    setCurrentTodo(todo);
+    setIsEditDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     try {
-      const { deleteTodo } = await import('@/lib/data/todos');
       const success = await deleteTodo(id);
       
       if (success) {
@@ -90,7 +90,6 @@ const TodosPage = () => {
 
   const handleStatusChange = async (id: string, status: 'pending' | 'in-progress' | 'completed') => {
     try {
-      const { updateTodo } = await import('@/lib/data/todos');
       const updatedTodo = await updateTodo(id, { status });
       
       if (updatedTodo) {
@@ -162,11 +161,26 @@ const TodosPage = () => {
           </>
         )}
         
+        {/* Dialog for adding a new todo */}
         <AddTodoForm 
           isOpen={isAddDialogOpen}
           onClose={() => setIsAddDialogOpen(false)}
           onSuccess={loadTodos}
         />
+        
+        {/* Dialog for editing an existing todo */}
+        {currentTodo && (
+          <AddTodoForm 
+            isOpen={isEditDialogOpen}
+            onClose={() => {
+              setIsEditDialogOpen(false);
+              setCurrentTodo(null);
+            }}
+            onSuccess={loadTodos}
+            todo={currentTodo}
+            isEditing={true}
+          />
+        )}
       </div>
     </TransitionWrapper>
   );

@@ -44,7 +44,7 @@ const TodoList: React.FC<TodoListProps> = ({ todos, onEdit, onDelete, onStatusCh
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="pending" className="space-y-4">
+      <TabsContent value="pending" className="space-y-3">
         {pendingTodos.length > 0 ? (
           pendingTodos.map(todo => (
             <TodoItem 
@@ -56,13 +56,13 @@ const TodoList: React.FC<TodoListProps> = ({ todos, onEdit, onDelete, onStatusCh
             />
           ))
         ) : (
-          <div className="text-center py-6 text-muted-foreground">
+          <div className="text-center py-4 text-muted-foreground">
             Нет ожидающих задач
           </div>
         )}
       </TabsContent>
       
-      <TabsContent value="in-progress" className="space-y-4">
+      <TabsContent value="in-progress" className="space-y-3">
         {inProgressTodos.length > 0 ? (
           inProgressTodos.map(todo => (
             <TodoItem 
@@ -74,13 +74,13 @@ const TodoList: React.FC<TodoListProps> = ({ todos, onEdit, onDelete, onStatusCh
             />
           ))
         ) : (
-          <div className="text-center py-6 text-muted-foreground">
+          <div className="text-center py-4 text-muted-foreground">
             Нет задач в работе
           </div>
         )}
       </TabsContent>
       
-      <TabsContent value="completed" className="space-y-4">
+      <TabsContent value="completed" className="space-y-3">
         {completedTodos.length > 0 ? (
           completedTodos.map(todo => (
             <TodoItem 
@@ -92,7 +92,7 @@ const TodoList: React.FC<TodoListProps> = ({ todos, onEdit, onDelete, onStatusCh
             />
           ))
         ) : (
-          <div className="text-center py-6 text-muted-foreground">
+          <div className="text-center py-4 text-muted-foreground">
             Нет завершенных задач
           </div>
         )}

@@ -1,4 +1,3 @@
-
 import React from 'react'; // Explicitly import React
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,9 +20,10 @@ import UnionPage from "./pages/UnionPage";
 import WiringDiagramsPage from "./pages/WiringDiagramsPage";
 import SiteIncidentsPage from "./pages/SiteIncidentsPage";
 import DesiredToolsPage from "./pages/DesiredToolsPage";
-import TodosPage from "./pages/TodosPage"; // Import the new TodosPage
+import TodosPage from "./pages/TodosPage";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
+import TodayActivityPage from './pages/TodayActivityPage';
 
 // Create a new QueryClient instance outside the component
 const queryClient = new QueryClient();
@@ -68,6 +68,7 @@ const App = () => {
                       <Route path="/union" element={<ProtectedRoute><UnionPage /></ProtectedRoute>} />
                       <Route path="/wiring-diagrams" element={<ProtectedRoute><WiringDiagramsPage /></ProtectedRoute>} />
                       <Route path="/todos" element={<ProtectedRoute><TodosPage /></ProtectedRoute>} />
+                      <Route path="/today-activity" element={<TodayActivityPage />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </AnimatePresence>

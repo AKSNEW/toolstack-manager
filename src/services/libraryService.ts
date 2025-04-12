@@ -29,6 +29,25 @@ export async function fetchLibraryItems(): Promise<LibraryItem[]> {
 
 // Create a new library item
 export async function createLibraryItem(item: Omit<LibraryItem, 'id'>): Promise<LibraryItem> {
+  // Make sure authorId is set correctly
+  if (!item.authorId && item.author) {
+    const { data: userData } = await supabase
+      .from('employees' as any)
+      .select('id')
+      .eq('name', item.author)
+      .single() as any;
+    
+    if (userData && userData.id) {
+      item.authorId = userData.id;
+    } else {
+      // If we can't find the author by name, try to get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        item.authorId = user.id;
+      }
+    }
+  }
+  
   // Using a generic query approach to bypass TypeScript type constraints
   const { data, error } = await supabase
     .from('library_items' as any)

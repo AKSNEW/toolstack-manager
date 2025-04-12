@@ -1,11 +1,17 @@
 
 import React from 'react';
-import { Check, Clock, CalendarIcon, UserCircle } from 'lucide-react';
+import { Check, Clock, CalendarIcon, UserCircle, MoreHorizontal, Edit, Trash2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface TodoItemProps {
   todo: any;
@@ -102,22 +108,41 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onEdit, onDelete, onStatusCha
         </div>
       </CardContent>
       <CardFooter className="pt-1 flex justify-between">
-        <div className="flex gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onEdit(todo)}
-          >
-            Изменить
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => onDelete(todo.id)}
-          >
-            Удалить
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => onEdit(todo)}>
+              <Edit className="mr-2 h-4 w-4" />
+              <span>Изменить</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDelete(todo.id)}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Удалить</span>
+            </DropdownMenuItem>
+            {todo.status !== 'completed' && (
+              <DropdownMenuItem 
+                onClick={() => onStatusChange(todo.id, todo.status === 'pending' ? 'in-progress' : 'completed')}
+              >
+                {todo.status === 'pending' ? (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    <span>Начать</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    <span>Завершить</span>
+                  </>
+                )}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
         {todo.status !== 'completed' && (
           <Button 
             variant="outline" 
@@ -125,7 +150,17 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onEdit, onDelete, onStatusCha
             className={getStatusColor(todo.status)}
             onClick={() => onStatusChange(todo.id, todo.status === 'pending' ? 'in-progress' : 'completed')}
           >
-            {todo.status === 'pending' ? 'Начать' : 'Завершить'}
+            {todo.status === 'pending' ? (
+              <>
+                <Play className="h-4 w-4 mr-1" />
+                <span>Начать</span>
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-1" />
+                <span>Завершить</span>
+              </>
+            )}
           </Button>
         )}
       </CardFooter>

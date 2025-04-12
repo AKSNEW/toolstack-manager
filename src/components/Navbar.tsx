@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,8 @@ import {
   LogOut,
   User,
   UserCircle,
-  ListTodo
+  ListTodo,
+  Map
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/context/AuthContext";
@@ -108,6 +108,11 @@ const navItems: NavItem[] = [
     label: "Бухгалтерия",
     icon: Calculator,
   },
+  {
+    name: 'Что я делал сегодня',
+    path: '/today-activity',
+    icon: <Map className="w-5 h-5" />,
+  },
 ];
 
 const Navbar = () => {
@@ -130,7 +135,6 @@ const Navbar = () => {
     navigate('/auth');
   };
 
-  // Don't show navigation if not authenticated
   if (location.pathname === '/auth') {
     return null;
   }
@@ -242,7 +246,6 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Mobile menu */}
       {showMobileMenu && (
         <div className="container border-t md:hidden">
           <div className="grid grid-flow-row text-sm py-3 gap-2">
