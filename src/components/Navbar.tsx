@@ -205,7 +205,7 @@ const Navbar = () => {
                         : "text-muted-foreground"
                     )}
                   >
-                    <item.icon className="mr-2 h-4 w-4" />
+                    /*<item.icon className="mr-2 h-4 w-4" />*/
                     {item.label}
                   </Link>
                 )
