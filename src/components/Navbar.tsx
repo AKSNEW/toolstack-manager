@@ -172,7 +172,7 @@ const Navbar = () => {
                             : "text-muted-foreground"
                         )}
                       >
-                        <item.icon className="mr-2 h-4 w-4" />
+                        /*<item.icon className="mr-2 h-4 w-4" />*/
                         {item.label}
                         <ChevronDown className="ml-1 h-4 w-4" />
                       </button>
@@ -187,7 +187,7 @@ const Navbar = () => {
                               location.pathname === child.href && "bg-accent/50"
                             )}
                           >
-                            <child.icon className="mr-2 h-4 w-4" />
+                           /* <child.icon className="mr-2 h-4 w-4" />*/
                             {child.label}
                           </Link>
                         </DropdownMenuItem>
